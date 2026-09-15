@@ -220,7 +220,7 @@
 
     <div class="section">
       <h2>Top placements <button class="btn-ghost" id="vid-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
-      <div class="desc">The actual YouTube channels, videos and sites your ads appeared on, ranked by spend.</div>
+      <div class="desc">Only shows explicitly managed placements — Google doesn't expose automatic/audience-targeted placements as named channels anywhere in Ads reporting.</div>
       <div id="vid-placements-table"><div class="loading">Load data to begin</div></div>
     </div>
 
@@ -1154,29 +1154,55 @@ async function loadVideo(start, end){
     document.getElementById('vid-geo-table').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
   }
 
-  /* ---- Top placements: real YouTube channels/videos/sites your ads ran on ---- */
+  /* ---- Top placements ----
+     Google's Placement table only captures explicitly managed placements. Confirmed
+     against this account: 0 of 61,272 rows carry a URL — your video campaigns run on
+     automatic/audience targeting, which Google simply doesn't expose as named channels
+     anywhere in Ads reporting (only visible in the Ads UI's own "Where ads showed"
+     report, which isn't part of this data export). Showing that plainly rather than
+     a misleading single blank row. */
   try {
-    const placeSql = `
-      SELECT p.ad_group_criterion_placement_url AS placement,
-        SUM(ps.metrics_impressions) AS impressions,
-        SUM(ps.metrics_clicks) AS clicks,
-        ROUND(SUM(ps.metrics_cost_micros)/1000000,2) AS spend,
-        ROUND(SUM(ps.metrics_conversions),1) AS conversions
+    const placeCheckSql = `
+      SELECT COUNTIF(p.ad_group_criterion_placement_url IS NOT NULL) AS with_url, COUNT(*) AS total
       FROM ${T('PlacementStats')} ps
       JOIN ${T('Placement')} p
-        ON ps.ad_group_criterion_criterion_id = p.ad_group_criterion_criterion_id
-        AND ps.ad_group_id = p.ad_group_id
+        ON CAST(ps.ad_group_criterion_criterion_id AS STRING) = CAST(p.ad_group_criterion_criterion_id AS STRING)
+        AND CAST(ps.ad_group_id AS STRING) = CAST(p.ad_group_id AS STRING)
       JOIN ${T('Campaign')} c ON ps.campaign_id = c.campaign_id
       WHERE c.campaign_advertising_channel_type = 'VIDEO'
         AND ps.segments_date BETWEEN '${start}' AND '${end}'
-      GROUP BY 1 ORDER BY spend DESC LIMIT 25
     `;
-    const placeRows = await runQuery(placeSql);
-    vidPlacementsCache = placeRows;
-    document.getElementById('vid-placements-table').innerHTML = placeRows.length ? `<table>
-      <tr><th>Placement</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>Conversions</th></tr>
-      ${placeRows.map(r=>`<tr><td><a href="${r.placement}" target="_blank" rel="noopener" style="color:var(--ink);">${r.placement}</a></td><td>${fmtInt(r.impressions)}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
-    </table>` : '<div class="empty">No placement-level data for this range.</div>';
+    const check = await runQuery(placeCheckSql);
+    const withUrl = check.length ? num(check[0].with_url) : 0;
+
+    if (withUrl === 0) {
+      vidPlacementsCache = [];
+      document.getElementById('vid-placements-table').innerHTML =
+        '<div class="empty">No named placements available — your video campaigns run on automatic/audience targeting, which Google doesn\'t expose as individual channels anywhere in Ads reporting. This is only visible directly in the Google Ads UI\'s own "Where ads showed" report for each campaign.</div>';
+    } else {
+      const placeSql = `
+        SELECT p.ad_group_criterion_placement_url AS placement,
+          SUM(ps.metrics_impressions) AS impressions,
+          SUM(ps.metrics_clicks) AS clicks,
+          ROUND(SUM(ps.metrics_cost_micros)/1000000,2) AS spend,
+          ROUND(SUM(ps.metrics_conversions),1) AS conversions
+        FROM ${T('PlacementStats')} ps
+        JOIN ${T('Placement')} p
+          ON CAST(ps.ad_group_criterion_criterion_id AS STRING) = CAST(p.ad_group_criterion_criterion_id AS STRING)
+          AND CAST(ps.ad_group_id AS STRING) = CAST(p.ad_group_id AS STRING)
+        JOIN ${T('Campaign')} c ON ps.campaign_id = c.campaign_id
+        WHERE c.campaign_advertising_channel_type = 'VIDEO'
+          AND ps.segments_date BETWEEN '${start}' AND '${end}'
+          AND p.ad_group_criterion_placement_url IS NOT NULL
+        GROUP BY 1 ORDER BY spend DESC LIMIT 25
+      `;
+      const placeRows = await runQuery(placeSql);
+      vidPlacementsCache = placeRows;
+      document.getElementById('vid-placements-table').innerHTML = placeRows.length ? `<table>
+        <tr><th>Placement</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>Conversions</th></tr>
+        ${placeRows.map(r=>`<tr><td><a href="${r.placement}" target="_blank" rel="noopener" style="color:var(--ink);">${r.placement}</a></td><td>${fmtInt(r.impressions)}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+      </table>` : '<div class="empty">No named placements for this range.</div>';
+    }
   } catch(e) {
     document.getElementById('vid-placements-table').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
   }
@@ -1194,9 +1220,9 @@ async function loadVideo(start, end){
       JOIN ${T('Campaign')} c
         ON CAST(REGEXP_EXTRACT(CAST(s.ad_group_campaign AS STRING), r'(\\d+)$') AS INT64) = c.campaign_id
       LEFT JOIN \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.audience_verticals\` v
-        ON s.ad_group_criterion_criterion_id = v.\`Criterion ID\`
+        ON CAST(s.ad_group_criterion_criterion_id AS STRING) = CAST(v.\`Criterion ID\` AS STRING)
       LEFT JOIN ${T('Audience')} aud
-        ON s.ad_group_criterion_criterion_id = aud.audience_id
+        ON CAST(s.ad_group_criterion_criterion_id AS STRING) = CAST(aud.audience_id AS STRING)
       WHERE c.campaign_advertising_channel_type = 'VIDEO'
         AND s.segments_date BETWEEN '${start}' AND '${end}'
       GROUP BY 1,2 ORDER BY spend DESC LIMIT 25
