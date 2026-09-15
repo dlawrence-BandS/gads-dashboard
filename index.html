@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Google Ads Performance · Barker &amp; Stonehouse</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --navy:#0b1f3a; --navy2:#132a4d; --teal:#0f6e6e; --teal-light:#e6f4f3;
+    --ink:#1c2430; --muted:#6b7280; --border:#e5e7eb; --bg:#f4f5f7;
+    --green:#12805c; --red:#c0392b; --amber:#b7791f; --card:#ffffff;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);}
+  header{background:var(--navy);color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+  header .brand{display:flex;flex-direction:column;}
+  header .brand .dot{color:var(--teal);}
+  header h1{font-size:18px;margin:0;font-weight:600;}
+  header .sub{font-size:12px;color:#9fb0c9;margin-top:2px;}
+  .controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  select, input[type=date]{background:#0e2647;border:1px solid #24406b;color:#fff;padding:7px 10px;border-radius:6px;font-size:13px;}
+  button{border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;}
+  .btn-primary{background:var(--teal);color:#fff;}
+  .btn-primary:hover{background:#0c5c5c;}
+  .btn-ghost{background:transparent;color:#cfe0ff;border:1px solid #33507e;}
+  .signed{font-size:12px;color:#9fb0c9;}
+  nav.tabs{display:flex;gap:2px;background:var(--navy2);padding:0 20px;overflow-x:auto;}
+  nav.tabs button{background:transparent;color:#b9c8e0;border-radius:0;padding:12px 16px;font-size:13px;border-bottom:3px solid transparent;white-space:nowrap;}
+  nav.tabs button.active{color:#fff;border-bottom:3px solid var(--teal);}
+  main{padding:22px 24px 60px;max-width:1400px;margin:0 auto;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+  .card .label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:6px;}
+  .card .value{font-size:22px;font-weight:700;}
+  .card .delta{font-size:12px;margin-top:4px;}
+  .delta.up{color:var(--green);} .delta.down{color:var(--red);} .delta.flat{color:var(--muted);}
+  .section{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:20px;}
+  .section h2{font-size:15px;margin:0 0 4px;}
+  .section .desc{font-size:12px;color:var(--muted);margin-bottom:14px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--border);padding:8px 10px;cursor:pointer;}
+  td{padding:8px 10px;border-bottom:1px solid #f0f1f3;}
+  tr:hover td{background:#fafbfc;}
+  .chart-wrap{position:relative;height:280px;margin-bottom:6px;}
+  .empty{color:var(--muted);font-size:13px;padding:20px;text-align:center;}
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;}
+  .badge.pmax{background:#eef2ff;color:#4338ca;}
+  .badge.shopping{background:#fef3c7;color:#92400e;}
+  .badge.search{background:#dbeafe;color:#1e40af;}
+  .badge.video{background:#fce7f3;color:#9d174d;}
+  .badge.demandgen{background:#dcfce7;color:#166534;}
+  .two-col{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;}
+  @media (max-width:900px){.two-col{grid-template-columns:1fr;}}
+  .note{background:var(--teal-light);border:1px solid #bfe3e0;color:#0c4a4a;font-size:12px;padding:10px 14px;border-radius:8px;margin-bottom:16px;}
+  .loading{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;padding:30px;justify-content:center;}
+  .spinner{width:16px;height:16px;border:2px solid #d5dae1;border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1><span class="dot">●</span> Google Ads Performance</h1>
+    <div class="sub">BARKER &amp; STONEHOUSE · Search, Shopping, PMax, Demand Gen &amp; YouTube</div>
+  </div>
+  <div class="controls">
+    <select id="datePreset">
+      <option value="7">Last 7 days</option>
+      <option value="30">Last 30 days</option>
+      <option value="90" selected>Last 90 days</option>
+      <option value="180">Last 180 days</option>
+      <option value="custom">Custom range</option>
+    </select>
+    <input type="date" id="startDate" style="display:none">
+    <input type="date" id="endDate" style="display:none">
+    <button class="btn-primary" id="loadBtn">Load data</button>
+    <button class="btn-ghost" id="signInBtn">Sign in with Google</button>
+    <span class="signed" id="signedStatus"></span>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-tab="overview" class="active">Overview</button>
+  <button data-tab="pmax">PMax</button>
+  <button data-tab="shopping">Shopping</button>
+  <button data-tab="search">Search</button>
+  <button data-tab="searchterms">Search Terms</button>
+  <button data-tab="video">YouTube / Video</button>
+  <button data-tab="demandgen">Demand Gen</button>
+  <button data-tab="regions">Regions</button>
+  <button data-tab="cities">Cities</button>
+  <button data-tab="device">Device &amp; Demographics</button>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <section class="panel active" id="panel-overview">
+    <div class="cards" id="ov-cards"></div>
+    <div class="section">
+      <h2>Spend &amp; conversions by channel</h2>
+      <div class="desc">All campaign types, selected date range. Click a row to jump to its tab.</div>
+      <div id="ov-table"><div class="loading">Sign in and load data to begin</div></div>
+    </div>
+    <div class="section">
+      <h2>Daily spend trend by channel</h2>
+      <div class="chart-wrap"><canvas id="ov-chart"></canvas></div>
+    </div>
+  </section>
+
+  <!-- PMAX -->
+  <section class="panel" id="panel-pmax">
+    <div class="note">Performance Max intentionally limits reporting depth — Google does not expose keyword, audience, or full geo/device breakdowns for PMax. This tab shows what's actually available: campaign performance and asset group / listing group performance.</div>
+    <div class="cards" id="pmax-cards"></div>
+    <div class="two-col">
+      <div class="section">
+        <h2>Campaigns</h2>
+        <div id="pmax-campaigns"><div class="loading">Load data to begin</div></div>
+      </div>
+      <div class="section">
+        <h2>Asset groups (by product group spend)</h2>
+        <div id="pmax-assetgroups"><div class="loading">Load data to begin</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SHOPPING -->
+  <section class="panel" id="panel-shopping">
+    <div class="cards" id="shop-cards"></div>
+    <div class="section">
+      <h2>Campaigns</h2>
+      <div id="shop-campaigns"><div class="loading">Load data to begin</div></div>
+    </div>
+    <div class="section">
+      <h2>Top products by spend</h2>
+      <div class="desc">From ShoppingProductStats — column names verified against your account below the table.</div>
+      <div id="shop-products"><div class="loading">Load data to begin</div></div>
+    </div>
+  </section>
+
+  <!-- SEARCH -->
+  <section class="panel" id="panel-search">
+    <div class="cards" id="srch-cards"></div>
+    <div class="two-col">
+      <div class="section">
+        <h2>Campaigns</h2>
+        <div id="srch-campaigns"><div class="loading">Load data to begin</div></div>
+      </div>
+      <div class="section">
+        <h2>Top keywords by spend</h2>
+        <div id="srch-keywords"><div class="loading">Load data to begin</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEARCH TERMS -->
+  <section class="panel" id="panel-searchterms">
+    <div class="section">
+      <h2>Search terms</h2>
+      <div class="desc">What people actually typed before your ad showed. High cost / zero conversion terms are flagged — good negative-keyword candidates.</div>
+      <div id="st-table"><div class="loading">Load data to begin</div></div>
+    </div>
+  </section>
+
+  <!-- VIDEO / YOUTUBE -->
+  <section class="panel" id="panel-video">
+    <div class="note">Video campaigns are brand-awareness format — expect very low or zero direct conversions. Lead with view-rate and CPV, not ROAS.</div>
+    <div class="cards" id="vid-cards"></div>
+    <div class="two-col">
+      <div class="section">
+        <h2>Campaigns</h2>
+        <div id="vid-campaigns"><div class="loading">Load data to begin</div></div>
+      </div>
+      <div class="section">
+        <h2>Top videos by views</h2>
+        <div id="vid-videos"><div class="loading">Load data to begin</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEMAND GEN -->
+  <section class="panel" id="panel-demandgen">
+    <div class="cards" id="dg-cards"></div>
+    <div class="section">
+      <h2>Campaigns</h2>
+      <div id="dg-campaigns"><div class="loading">Load data to begin</div></div>
+    </div>
+    <div class="section">
+      <h2>Daily trend</h2>
+      <div class="chart-wrap"><canvas id="dg-chart"></canvas></div>
+    </div>
+  </section>
+
+  <!-- REGIONS -->
+  <section class="panel" id="panel-regions">
+    <div class="note">Google's own geo granularity (not yet mapped to your TV region groupings — North East / Yorkshire / Midlands etc). That mapping is the next build step once this base view is confirmed working.</div>
+    <div class="section">
+      <h2>Performance by region</h2>
+      <div id="reg-table"><div class="loading">Load data to begin</div></div>
+    </div>
+  </section>
+
+  <!-- CITIES -->
+  <section class="panel" id="panel-cities">
+    <div class="section">
+      <h2>Performance by city</h2>
+      <div class="desc">Resolved via geo_target_reference (Target Type = City). Search box filters client-side.</div>
+      <input type="text" id="city-filter" placeholder="Search city or region…" style="width:280px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;margin-bottom:12px;">
+      <div id="city-table"><div class="loading">Load data to begin</div></div>
+    </div>
+  </section>
+
+  <!-- DEVICE & DEMOGRAPHICS -->
+  <section class="panel" id="panel-device">
+    <div class="two-col">
+      <div class="section">
+        <h2>By device</h2>
+        <div class="chart-wrap" style="height:220px;"><canvas id="dev-chart"></canvas></div>
+        <div id="dev-table"></div>
+      </div>
+      <div class="section">
+        <h2>By age range</h2>
+        <div id="age-table"><div class="loading">Load data to begin</div></div>
+      </div>
+    </div>
+    <div class="section">
+      <h2>By gender</h2>
+      <div id="gender-table"><div class="loading">Load data to begin</div></div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ============================================================
+   CONFIG — matches the standard B&S BigQuery stack
+   ============================================================ */
+const CONFIG = {
+  PROJECT_ID: 'commanding-air-450109-p0',
+  DATASET: 'google_ads_raw',
+  CUSTOMER_SUFFIX: '6938518576',   // table suffix, e.g. ads_CampaignBasicStats_6938518576
+  LOCATION: 'europe-west2',
+  CLIENT_ID: '46227372300-rk63ag0caqgd7n12gjd0nt7f2qi7llqr.apps.googleusercontent.com',
+  SCOPE: 'https://www.googleapis.com/auth/bigquery.readonly'
+};
+const T = (name) => `\`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.ads_${name}_${CONFIG.CUSTOMER_SUFFIX}\``;
+const GEO_REF = () => `\`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.geo_target_reference\``;
+
+/* ============================================================
+   AUTH — Google Identity Services token client
+   ============================================================ */
+let accessToken = null;
+let tokenClient = null;
+
+function initAuth(){
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CONFIG.CLIENT_ID,
+    scope: CONFIG.SCOPE,
+    callback: (resp) => {
+      if (resp.error) { console.error(resp); return; }
+      accessToken = resp.access_token;
+      document.getElementById('signedStatus').textContent = 'Signed in';
+      document.getElementById('signInBtn').textContent = 'Re-authorise';
+    }
+  });
+}
+document.getElementById('signInBtn').addEventListener('click', () => {
+  if (!tokenClient) { alert('Still loading Google sign-in — try again in a second.'); return; }
+  tokenClient.requestAccessToken();
+});
+window.addEventListener('load', () => {
+  // GIS script loads async; poll briefly until available
+  const check = setInterval(() => {
+    if (window.google && google.accounts) { initAuth(); clearInterval(check); }
+  }, 200);
+});
+
+/* ============================================================
+   BIGQUERY QUERY RUNNER
+   ============================================================ */
+async function runQuery(sql){
+  if (!accessToken) throw new Error('Not signed in yet.');
+  const res = await fetch(`https://bigquery.googleapis.com/bigquery/v2/projects/${CONFIG.PROJECT_ID}/queries`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: sql, useLegacySql: false, location: CONFIG.LOCATION, timeoutMs: 30000 })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || 'BigQuery error');
+  const fields = (data.schema && data.schema.fields) || [];
+  const rows = (data.rows || []).map(r => {
+    const obj = {};
+    r.f.forEach((cell, i) => { obj[fields[i].name] = cell.v; });
+    return obj;
+  });
+  return rows;
+}
+const num = (v) => v === null || v === undefined ? 0 : Number(v);
+const fmtInt = (v) => num(v).toLocaleString('en-GB', {maximumFractionDigits:0});
+const fmtGBP = (v) => '£' + num(v).toLocaleString('en-GB', {maximumFractionDigits:0});
+const fmtPct = (v) => (num(v)*100).toFixed(2) + '%';
+const safeDiv = (a,b) => b ? a/b : 0;
+
+/* ============================================================
+   DATE RANGE HANDLING
+   ============================================================ */
+function getDateRange(){
+  const preset = document.getElementById('datePreset').value;
+  const end = new Date();
+  let start = new Date();
+  if (preset === 'custom') {
+    return {
+      start: document.getElementById('startDate').value,
+      end: document.getElementById('endDate').value
+    };
+  }
+  start.setDate(end.getDate() - parseInt(preset, 10));
+  const iso = (d) => d.toISOString().slice(0,10);
+  return { start: iso(start), end: iso(end) };
+}
+document.getElementById('datePreset').addEventListener('change', (e) => {
+  const custom = e.target.value === 'custom';
+  document.getElementById('startDate').style.display = custom ? 'inline-block' : 'none';
+  document.getElementById('endDate').style.display = custom ? 'inline-block' : 'none';
+});
+
+/* ============================================================
+   TABS
+   ============================================================ */
+document.getElementById('tabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-tab]');
+  if (!btn) return;
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+});
+
+/* ============================================================
+   LOAD DATA — runs every tab's query
+   ============================================================ */
+document.getElementById('loadBtn').addEventListener('click', loadAll);
+
+async function loadAll(){
+  if (!accessToken) { alert('Sign in with Google first.'); return; }
+  const { start, end } = getDateRange();
+  if (!start || !end) { alert('Pick a valid date range.'); return; }
+  try {
+    await Promise.all([
+      loadOverview(start, end),
+      loadPMax(start, end),
+      loadShopping(start, end),
+      loadSearch(start, end),
+      loadSearchTerms(start, end),
+      loadVideo(start, end),
+      loadDemandGen(start, end),
+      loadRegions(start, end),
+      loadCities(start, end),
+      loadDeviceDemo(start, end)
+    ]);
+  } catch (err) {
+    console.error(err);
+    alert('Something went wrong loading data — check the browser console for the failing query.');
+  }
+}
+
+/* ---------- shared campaign-base join fragment ---------- */
+const campaignBase = () => `
+  FROM ${T('CampaignBasicStats')} s
+  JOIN ${T('Campaign')} c ON s.campaign_id = c.campaign_id
+`;
+
+/* ============================================================
+   OVERVIEW
+   ============================================================ */
+async function loadOverview(start, end){
+  const sql = `
+    SELECT
+      c.campaign_advertising_channel_type AS channel,
+      SUM(s.metrics_impressions) AS impressions,
+      SUM(s.metrics_clicks) AS clicks,
+      ROUND(SUM(s.metrics_cost_micros)/1000000, 2) AS spend,
+      ROUND(SUM(s.metrics_conversions), 1) AS conversions,
+      ROUND(SUM(s.metrics_conversions_value), 2) AS conv_value
+    ${campaignBase()}
+    WHERE s.segments_date BETWEEN '${start}' AND '${end}'
+    GROUP BY 1
+    ORDER BY spend DESC
+  `;
+  const rows = await runQuery(sql);
+  renderOverviewCards(rows);
+  renderOverviewTable(rows);
+  await renderOverviewChart(start, end);
+}
+
+function renderOverviewCards(rows){
+  const totals = rows.reduce((acc, r) => {
+    acc.impressions += num(r.impressions); acc.clicks += num(r.clicks);
+    acc.spend += num(r.spend); acc.conversions += num(r.conversions);
+    acc.conv_value += num(r.conv_value);
+    return acc;
+  }, {impressions:0, clicks:0, spend:0, conversions:0, conv_value:0});
+  const cvr = safeDiv(totals.conversions, totals.clicks);
+  const cpa = safeDiv(totals.spend, totals.conversions);
+  const roas = safeDiv(totals.conv_value, totals.spend);
+  document.getElementById('ov-cards').innerHTML = [
+    ['Impressions', fmtInt(totals.impressions)],
+    ['Clicks', fmtInt(totals.clicks)],
+    ['Spend', fmtGBP(totals.spend)],
+    ['Conversions', fmtInt(totals.conversions)],
+    ['CVR', fmtPct(cvr)],
+    ['CPA', fmtGBP(cpa)],
+    ['ROAS', roas.toFixed(2) + 'x']
+  ].map(([label,val]) => `<div class="card"><div class="label">${label}</div><div class="value">${val}</div></div>`).join('');
+}
+
+function badgeFor(channel){
+  const map = {PERFORMANCE_MAX:['pmax','PMax'], SHOPPING:['shopping','Shopping'], SEARCH:['search','Search'],
+    VIDEO:['video','Video'], DEMAND_GEN:['demandgen','Demand Gen']};
+  const [cls,label] = map[channel] || ['search', channel];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+const tabForChannel = {PERFORMANCE_MAX:'pmax', SHOPPING:'shopping', SEARCH:'search', VIDEO:'video', DEMAND_GEN:'demandgen'};
+
+function renderOverviewTable(rows){
+  if (!rows.length){ document.getElementById('ov-table').innerHTML = '<div class="empty">No data for this range.</div>'; return; }
+  const html = `<table>
+    <tr><th>Channel</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>Conversions</th><th>CVR</th><th>CPA</th></tr>
+    ${rows.map(r => `
+      <tr style="cursor:pointer" data-jump="${tabForChannel[r.channel]||''}">
+        <td>${badgeFor(r.channel)}</td>
+        <td>${fmtInt(r.impressions)}</td>
+        <td>${fmtInt(r.clicks)}</td>
+        <td>${fmtGBP(r.spend)}</td>
+        <td>${fmtInt(r.conversions)}</td>
+        <td>${fmtPct(safeDiv(r.conversions, r.clicks))}</td>
+        <td>${fmtGBP(safeDiv(r.spend, r.conversions))}</td>
+      </tr>`).join('')}
+  </table>`;
+  const el = document.getElementById('ov-table');
+  el.innerHTML = html;
+  el.querySelectorAll('tr[data-jump]').forEach(tr => tr.addEventListener('click', () => {
+    const tab = tr.dataset.jump;
+    if (tab) document.querySelector(`nav.tabs button[data-tab="${tab}"]`).click();
+  }));
+}
+
+let ovChartInstance = null;
+async function renderOverviewChart(start, end){
+  const sql = `
+    SELECT s.segments_date AS date, c.campaign_advertising_channel_type AS channel,
+      ROUND(SUM(s.metrics_cost_micros)/1000000, 2) AS spend
+    ${campaignBase()}
+    WHERE s.segments_date BETWEEN '${start}' AND '${end}'
+    GROUP BY 1,2 ORDER BY 1
+  `;
+  const rows = await runQuery(sql);
+  const dates = [...new Set(rows.map(r => r.date))].sort();
+  const channels = [...new Set(rows.map(r => r.channel))];
+  const colors = {PERFORMANCE_MAX:'#4338ca', SHOPPING:'#b7791f', SEARCH:'#1e40af', VIDEO:'#9d174d', DEMAND_GEN:'#166534'};
+  const datasets = channels.map(ch => ({
+    label: ch, data: dates.map(d => { const m = rows.find(r => r.date===d && r.channel===ch); return m ? num(m.spend) : 0; }),
+    borderColor: colors[ch]||'#666', backgroundColor: (colors[ch]||'#666')+'22', tension:.3, fill:true
+  }));
+  if (ovChartInstance) ovChartInstance.destroy();
+  ovChartInstance = new Chart(document.getElementById('ov-chart'), {
+    type:'line', data:{ labels:dates, datasets },
+    options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ stacked:false } } }
+  });
+}
+
+/* ============================================================
+   PMAX
+   ============================================================ */
+async function loadPMax(start, end){
+  const sql = `
+    SELECT c.campaign_id, c.campaign_name,
+      SUM(s.metrics_impressions) AS impressions, SUM(s.metrics_clicks) AS clicks,
+      ROUND(SUM(s.metrics_cost_micros)/1000000,2) AS spend,
+      ROUND(SUM(s.metrics_conversions),1) AS conversions,
+      ROUND(SUM(s.metrics_conversions_value),2) AS conv_value
+    ${campaignBase()}
+    WHERE c.campaign_advertising_channel_type = 'PERFORMANCE_MAX'
+      AND s.segments_date BETWEEN '${start}' AND '${end}'
+    GROUP BY 1,2 ORDER BY spend DESC
+  `;
+  const rows = await runQuery(sql);
+  const totals = rows.reduce((a,r)=>({spend:a.spend+num(r.spend), conv:a.conv+num(r.conversions), convVal:a.convVal+num(r.conv_value), clicks:a.clicks+num(r.clicks)}), {spend:0,conv:0,convVal:0,clicks:0});
+  document.getElementById('pmax-cards').innerHTML = [
+    ['Spend', fmtGBP(totals.spend)], ['Conversions', fmtInt(totals.conv)],
+    ['CPA', fmtGBP(safeDiv(totals.spend, totals.conv))], ['ROAS', safeDiv(totals.convVal, totals.spend).toFixed(2)+'x']
+  ].map(([l,v]) => `<div class="card"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('');
+
+  document.getElementById('pmax-campaigns').innerHTML = rows.length ? `<table>
+    <tr><th>Campaign</th><th>Spend</th><th>Conversions</th><th>CPA</th><th>ROAS</th></tr>
+    ${rows.map(r=>`<tr><td>${r.campaign_name}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td>
+      <td>${fmtGBP(safeDiv(r.spend,r.conversions))}</td><td>${safeDiv(r.conv_value,r.spend).toFixed(2)}x</td></tr>`).join('')}
+  </table>` : '<div class="empty">No PMax data for this range.</div>';
+
+  // Asset group product group stats — schema not fully verified; wrapped in try/catch
+  try {
+    const agSql = `
+      SELECT ag.asset_group_name,
+        SUM(ags.metrics_impressions) AS impressions,
+        ROUND(SUM(ags.metrics_cost_micros)/1000000,2) AS spend,
+        ROUND(SUM(ags.metrics_conversions),1) AS conversions
+      FROM ${T('AssetGroupProductGroupStats')} ags
+      JOIN ${T('AssetGroup')} ag ON ags.asset_group_id = ag.asset_group_id
+      WHERE ags.segments_date BETWEEN '${start}' AND '${end}'
+      GROUP BY 1 ORDER BY spend DESC LIMIT 25
+    `;
+    const agRows = await runQuery(agSql);
+    document.getElementById('pmax-assetgroups').innerHTML = agRows.length ? `<table>
+      <tr><th>Asset group</th><th>Impressions</th><th>Spend</th><th>Conversions</th></tr>
+      ${agRows.map(r=>`<tr><td>${r.asset_group_name}</td><td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+    </table>` : '<div class="empty">No asset group data.</div>';
+  } catch(e) {
+    document.getElementById('pmax-assetgroups').innerHTML =
+      `<div class="empty">Column names for AssetGroupProductGroupStats need verifying — run:<br>
+      <code>SELECT column_name FROM \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.INFORMATION_SCHEMA.COLUMNS\`
+      WHERE table_name = 'ads_AssetGroupProductGroupStats_${CONFIG.CUSTOMER_SUFFIX}'</code><br>
+      then adjust the query in this file. Error: ${e.message}</div>`;
+  }
+}
+
+/* ============================================================
+   SHOPPING
+   ============================================================ */
+async function loadShopping(start, end){
+  const sql = `
+    SELECT c.campaign_id, c.campaign_name,
+      SUM(s.metrics_impressions) AS impressions, SUM(s.metrics_clicks) AS clicks,
+      ROUND(SUM(s.metrics_cost_micros)/1000000,2) AS spend,
+      ROUND(SUM(s.metrics_conversions),1) AS conversions,
+      ROUND(SUM(s.metrics_conversions_value),2) AS conv_value
+    ${campaignBase()}
+    WHERE c.campaign_advertising_channel_type = 'SHOPPING'
+      AND s.segments_date BETWEEN '${start}' AND '${end}'
+    GROUP BY 1,2 ORDER BY spend DESC
+  `;
+  const rows = await runQuery(sql);
+  const totals = rows.reduce((a,r)=>({spend:a.spend+num(r.spend), conv:a.conv+num(r.conversions), convVal:a.convVal+num(r.conv_value)}), {spend:0,conv:0,convVal:0});
+  document.getElementById('shop-cards').innerHTML = [
+    ['Spend', fmtGBP(totals.spend)], ['Conversions', fmtInt(totals.conv)],
+    ['CPA', fmtGBP(safeDiv(totals.spend, totals.conv))], ['ROAS', safeDiv(totals.convVal, totals.spend).toFixed(2)+'x']
+  ].map(([l,v]) => `<div class="card"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('');
+
+  document.getElementById('shop-campaigns').innerHTML = rows.length ? `<table>
+    <tr><th>Campaign</th><th>Spend</th><th>Conversions</th><th>ROAS</th></tr>
+    ${rows.map(r=>`<tr><td>${r.campaign_name}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td><td>${safeDiv(r.conv_value,r.spend).toFixed(2)}x</td></tr>`).join('')}
+  </table>` : '<div class="empty">No Shopping campaign data.</div>';
+
+  try {
+    const prodSql = `
+      SELECT segments_product_title AS title,
+        SUM(metrics_impressions) AS impressions,
+        ROUND(SUM(metrics_cost_micros)/1000000,2) AS spend,
+        ROUND(SUM(metrics_conversions),1) AS conversions
+      FROM ${T('ShoppingProductStats')}
+      WHERE segments_date BETWEEN '${start}' AND '${end}'
+      GROUP BY 1 ORDER BY spend DESC LIMIT 25
+    `;
+    const prodRows = await runQuery(prodSql);
+    document.getElementById('shop-products').innerHTML = prodRows.length ? `<table>
+      <tr><th>Product</th><th>Impressions</th><th>Spend</th><th>Conversions</th></tr>
+      ${prodRows.map(r=>`<tr><td>${r.title||'(unknown)'}</td><td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+    </table>` : '<div class="empty">No product-level data.</div>';
+  } catch(e) {
+    document.getElementById('shop-products').innerHTML =
+      `<div class="empty">Column names for ShoppingProductStats need verifying — run:<br>
+      <code>SELECT column_name FROM \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.INFORMATION_SCHEMA.COLUMNS\`
+      WHERE table_name = 'ads_ShoppingProductStats_${CONFIG.CUSTOMER_SUFFIX}'</code><br>
+      then adjust the query in this file (the field is likely named differently to segments_product_title). Error: ${e.message}</div>`;
+  }
+}
+
+/* ============================================================
+   SEARCH
+   ============================================================ */
+async function loadSearch(start, end){
+  const sql = `
+    SELECT c.campaign_id, c.campaign_name,
+      SUM(s.metrics_impressions) AS impressions, SUM(s.metrics_clicks) AS clicks,
+      ROUND(SUM(s.metrics_cost_micros)/1000000,2) AS spend,
+      ROUND(SUM(s.metrics_conversions),1) AS conversions
+    ${campaignBase()}
+    WHERE c.campaign_advertising_channel_type = 'SEARCH'
+      AND s.segments_date BETWEEN '${start}' AND '${end}'
+    GROUP BY 1,2 ORDER BY spend DESC
+  `;
+  const rows = await runQuery(sql);
+  const totals = rows.reduce((a,r)=>({spend:a.spend+num(r.spend), clicks:a.clicks+num(r.clicks), conv:a.conv+num(r.conversions)}), {spend:0,clicks:0,conv:0});
+  document.getElementById('srch-cards').innerHTML = [
+    ['Spend', fmtGBP(totals.spend)], ['Clicks', fmtInt(totals.clicks)],
+    ['Conversions', fmtInt(totals.conv)], ['CPA', fmtGBP(safeDiv(totals.spend,totals.conv))]
+  ].map(([l,v]) => `<div class="card"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('');
+
+  document.getElementById('srch-campaigns').innerHTML = rows.length ? `<table>
+    <tr><th>Campaign</th><th>Clicks</th><th>Spend</th><th>Conversions</th></tr>
+    ${rows.map(r=>`<tr><td>${r.campaign_name}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+  </table>` : '<div class="empty">No Search campaign data.</div>';
+
+  try {
+    const kwSql = `
+      SELECT k.keyword_text AS keyword,
+        SUM(ks.metrics_clicks) AS clicks,
+        ROUND(SUM(ks.metrics_cost_micros)/1000000,2) AS spend,
+        ROUND(SUM(ks.metrics_conversions),1) AS conversions
+      FROM ${T('KeywordStats')} ks
+      JOIN ${T('Keyword')} k ON ks.criterion_id = k.criterion_id AND ks.ad_group_id = k.ad_group_id
+      WHERE ks.segments_date BETWEEN '${start}' AND '${end}'
+      GROUP BY 1 ORDER BY spend DESC LIMIT 25
+    `;
+    const kwRows = await runQuery(kwSql);
+    document.getElementById('srch-keywords').innerHTML = kwRows.length ? `<table>
+      <tr><th>Keyword</th><th>Clicks</th><th>Spend</th><th>Conversions</th></tr>
+      ${kwRows.map(r=>`<tr><td>${r.keyword}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+    </table>` : '<div class="empty">No keyword data.</div>';
+  } catch(e) {
+    document.getElementById('srch-keywords').innerHTML =
+      `<div class="empty">Join key for KeywordStats → Keyword needs verifying — run:<br>
+      <code>SELECT column_name FROM \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.INFORMATION_SCHEMA.COLUMNS\`
+      WHERE table_name IN ('ads_KeywordStats_${CONFIG.CUSTOMER_SUFFIX}','ads_Keyword_${CONFIG.CUSTOMER_SUFFIX}')</code><br>
+      then adjust the join in this file. Error: ${e.message}</div>`;
+  }
+}
+
+/* ============================================================
+   SEARCH TERMS
+   ============================================================ */
+async function loadSearchTerms(start, end){
+  try {
+    const sql = `
+      SELECT search_term_view_search_term AS term,
+        SUM(metrics_clicks) AS clicks,
+        ROUND(SUM(metrics_cost_micros)/1000000,2) AS spend,
+        ROUND(SUM(metrics_conversions),1) AS conversions
+      FROM ${T('SearchQueryStats')}
+      WHERE segments_date BETWEEN '${start}' AND '${end}'
+      GROUP BY 1 ORDER BY spend DESC LIMIT 50
+    `;
+    const rows = await runQuery(sql);
+    document.getElementById('st-table').innerHTML = rows.length ? `<table>
+      <tr><th>Search term</th><th>Clicks</th><th>Spend</th><th>Conversions</th><th></th></tr>
+      ${rows.map(r=>`<tr><td>${r.term}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td>
+        <td>${(num(r.spend)>20 && num(r.conversions)===0) ? '<span class="badge" style="background:#fee2e2;color:#991b1b;">wasted spend?</span>' : ''}</td></tr>`).join('')}
+    </table>` : '<div class="empty">No search term data.</div>';
+  } catch(e) {
+    document.getElementById('st-table').innerHTML =
+      `<div class="empty">Column name for the search term text field needs verifying — run:<br>
+      <code>SELECT column_name FROM \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.INFORMATION_SCHEMA.COLUMNS\`
+      WHERE table_name = 'ads_SearchQueryStats_${CONFIG.CUSTOMER_SUFFIX}'</code><br>
+      then adjust the query in this file. Error: ${e.message}</div>`;
+  }
+}
+
+/* ============================================================
+   VIDEO / YOUTUBE
+   ============================================================ */
+async function loadVideo(start, end){
+  const sql = `
+    SELECT c.campaign_id, c.campaign_name,
+      SUM(s.metrics_impressions) AS impressions,
+      SUM(s.metrics_clicks) AS clicks,
+      ROUND(SUM(s.metrics_cost_micros)/1000000,2) AS spend
+    ${campaignBase()}
+    WHERE c.campaign_advertising_channel_type = 'VIDEO'
+      AND s.segments_date BETWEEN '${start}' AND '${end}'
+    GROUP BY 1,2 ORDER BY spend DESC
+  `;
+  const rows = await runQuery(sql);
+  const totals = rows.reduce((a,r)=>({spend:a.spend+num(r.spend), impr:a.impr+num(r.impressions)}), {spend:0,impr:0});
+
+  let viewTotals = {views:0, cpv:0};
+  try {
+    const vidSql = `
+      SELECT SUM(metrics_video_views) AS views,
+        ROUND(SUM(metrics_cost_micros)/1000000,2) AS spend
+      FROM ${T('VideoBasicStats')}
+      WHERE segments_date BETWEEN '${start}' AND '${end}'
+    `;
+    const vr = await runQuery(vidSql);
+    if (vr.length) viewTotals = { views: num(vr[0].views), cpv: safeDiv(num(vr[0].spend), num(vr[0].views)) };
+  } catch(e) { /* handled below in videos table */ }
+
+  document.getElementById('vid-cards').innerHTML = [
+    ['Spend', fmtGBP(totals.spend)], ['Impressions', fmtInt(totals.impr)],
+    ['Views', fmtInt(viewTotals.views)], ['CPV', viewTotals.views ? '£'+viewTotals.cpv.toFixed(3) : '—']
+  ].map(([l,v]) => `<div class="card"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('');
+
+  document.getElementById('vid-campaigns').innerHTML = rows.length ? `<table>
+    <tr><th>Campaign</th><th>Impressions</th><th>Spend</th></tr>
+    ${rows.map(r=>`<tr><td>${r.campaign_name}</td><td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td></tr>`).join('')}
+  </table>` : '<div class="empty">No Video campaign data.</div>';
+
+  try {
+    const vTopSql = `
+      SELECT v.video_id,
+        SUM(vs.metrics_video_views) AS views,
+        ROUND(SUM(vs.metrics_cost_micros)/1000000,2) AS spend
+      FROM ${T('VideoBasicStats')} vs
+      LEFT JOIN ${T('Video')} v ON vs.video_id = v.video_id
+      WHERE vs.segments_date BETWEEN '${start}' AND '${end}'
+      GROUP BY 1 ORDER BY views DESC LIMIT 15
+    `;
+    const vTop = await runQuery(vTopSql);
+    document.getElementById('vid-videos').innerHTML = vTop.length ? `<table>
+      <tr><th>Video ID</th><th>Views</th><th>Spend</th></tr>
+      ${vTop.map(r=>`<tr><td>${r.video_id}</td><td>${fmtInt(r.views)}</td><td>${fmtGBP(r.spend)}</td></tr>`).join('')}
+    </table>` : '<div class="empty">No video-level data.</div>';
+  } catch(e) {
+    document.getElementById('vid-videos').innerHTML =
+      `<div class="empty">Column names for VideoBasicStats/Video need verifying — run:<br>
+      <code>SELECT column_name FROM \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.INFORMATION_SCHEMA.COLUMNS\`
+      WHERE table_name IN ('ads_VideoBasicStats_${CONFIG.CUSTOMER_SUFFIX}','ads_Video_${CONFIG.CUSTOMER_SUFFIX}')</code><br>
+      then adjust this query. Error: ${e.message}</div>`;
+  }
+}
+
+/* ============================================================
+   DEMAND GEN
+   ============================================================ */
+async function loadDemandGen(start, end){
+  const sql = `
+    SELECT c.campaign_id, c.campaign_name, s.segments_date AS date,
+      SUM(s.metrics_impressions) AS impressions, SUM(s.metrics_clicks) AS clicks,
+      ROUND(SUM(s.metrics_cost_micros)/1000000,2) AS spend,
+      ROUND(SUM(s.metrics_conversions),1) AS conversions
+    ${campaignBase()}
+    WHERE c.campaign_advertising_channel_type = 'DEMAND_GEN'
+      AND s.segments_date BETWEEN '${start}' AND '${end}'
+    GROUP BY 1,2,3 ORDER BY date
+  `;
+  const rows = await runQuery(sql);
+  const totals = rows.reduce((a,r)=>({spend:a.spend+num(r.spend), clicks:a.clicks+num(r.clicks), conv:a.conv+num(r.conversions), impr:a.impr+num(r.impressions)}), {spend:0,clicks:0,conv:0,impr:0});
+  document.getElementById('dg-cards').innerHTML = [
+    ['Impressions', fmtInt(totals.impr)], ['Clicks', fmtInt(totals.clicks)],
+    ['Spend', fmtGBP(totals.spend)], ['Conversions', fmtInt(totals.conv)]
+  ].map(([l,v]) => `<div class="card"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('');
+
+  const byCampaign = {};
+  rows.forEach(r => { byCampaign[r.campaign_name] = byCampaign[r.campaign_name] || {spend:0,conv:0}; byCampaign[r.campaign_name].spend += num(r.spend); byCampaign[r.campaign_name].conv += num(r.conversions); });
+  const campRows = Object.entries(byCampaign);
+  document.getElementById('dg-campaigns').innerHTML = campRows.length ? `<table>
+    <tr><th>Campaign</th><th>Spend</th><th>Conversions</th></tr>
+    ${campRows.map(([name,v])=>`<tr><td>${name}</td><td>${fmtGBP(v.spend)}</td><td>${fmtInt(v.conv)}</td></tr>`).join('')}
+  </table>` : '<div class="empty">No Demand Gen campaign data.</div>';
+
+  const dates = [...new Set(rows.map(r=>r.date))].sort();
+  const spendByDate = dates.map(d => rows.filter(r=>r.date===d).reduce((s,r)=>s+num(r.spend),0));
+  if (window.dgChartInstance) window.dgChartInstance.destroy();
+  window.dgChartInstance = new Chart(document.getElementById('dg-chart'), {
+    type:'line', data:{ labels:dates, datasets:[{ label:'Spend', data:spendByDate, borderColor:'#166534', backgroundColor:'#16653422', tension:.3, fill:true }] },
+    options:{ responsive:true, maintainAspectRatio:false }
+  });
+}
+
+/* ============================================================
+   REGIONS
+   ============================================================ */
+async function loadRegions(start, end){
+  const sql = `
+    SELECT segments_geo_target_most_specific_location AS geo_id, segments_device AS device,
+      SUM(metrics_impressions) AS impressions, SUM(metrics_clicks) AS clicks,
+      ROUND(SUM(metrics_cost_micros)/1000000,2) AS spend,
+      ROUND(SUM(metrics_conversions),1) AS conversions
+    FROM ${T('GeoStats')}
+    WHERE segments_date BETWEEN '${start}' AND '${end}'
+    GROUP BY 1,2
+  `;
+  const geoRows = await runQuery(sql);
+  const refSql = `SELECT \`Criteria ID\` AS id, Name AS name, \`Target Type\` AS type FROM ${GEO_REF()} WHERE \`Target Type\` IN ('Region','County','Country/Region')`;
+  let refRows = [];
+  try { refRows = await runQuery(refSql); } catch(e){ /* fall through, show raw IDs */ }
+  const refMap = {}; refRows.forEach(r => refMap[r.id] = r.name);
+
+  const byRegion = {};
+  geoRows.forEach(r => {
+    const idMatch = (r.geo_id||'').match(/(\d+)$/);
+    const id = idMatch ? idMatch[1] : null;
+    const name = (id && refMap[id]) ? refMap[id] : (r.geo_id || 'Unknown');
+    byRegion[name] = byRegion[name] || {impressions:0, clicks:0, spend:0, conversions:0};
+    byRegion[name].impressions += num(r.impressions); byRegion[name].clicks += num(r.clicks);
+    byRegion[name].spend += num(r.spend); byRegion[name].conversions += num(r.conversions);
+  });
+  const rows = Object.entries(byRegion).sort((a,b)=>b[1].spend-a[1].spend).slice(0,60);
+  document.getElementById('reg-table').innerHTML = rows.length ? `<table>
+    <tr><th>Region</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>Conversions</th></tr>
+    ${rows.map(([name,v])=>`<tr><td>${name}</td><td>${fmtInt(v.impressions)}</td><td>${fmtInt(v.clicks)}</td><td>${fmtGBP(v.spend)}</td><td>${fmtInt(v.conversions)}</td></tr>`).join('')}
+  </table>` : '<div class="empty">No geo data.</div>';
+}
+
+/* ============================================================
+   CITIES
+   ============================================================ */
+let cityRowsCache = [];
+async function loadCities(start, end){
+  const sql = `
+    SELECT g.segments_geo_target_most_specific_location AS geo_id,
+      SUM(g.metrics_impressions) AS impressions, SUM(g.metrics_clicks) AS clicks,
+      ROUND(SUM(g.metrics_cost_micros)/1000000,2) AS spend,
+      ROUND(SUM(g.metrics_conversions),1) AS conversions
+    FROM ${T('GeoStats')} g
+    WHERE g.segments_date BETWEEN '${start}' AND '${end}'
+    GROUP BY 1
+  `;
+  const geoRows = await runQuery(sql);
+  const refSql = `SELECT \`Criteria ID\` AS id, Name AS name FROM ${GEO_REF()} WHERE \`Target Type\` = 'City'`;
+  const refRows = await runQuery(refSql);
+  const refMap = {}; refRows.forEach(r => refMap[r.id] = r.name);
+
+  cityRowsCache = geoRows.map(r => {
+    const idMatch = (r.geo_id||'').match(/(\d+)$/);
+    const id = idMatch ? idMatch[1] : null;
+    return { name: (id && refMap[id]) ? refMap[id] : null, ...r };
+  }).filter(r => r.name).sort((a,b)=>num(b.spend)-num(a.spend));
+  renderCityTable(cityRowsCache);
+}
+function renderCityTable(rows){
+  document.getElementById('city-table').innerHTML = rows.length ? `<table>
+    <tr><th>City</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>Conversions</th></tr>
+    ${rows.slice(0,200).map(r=>`<tr><td>${r.name}</td><td>${fmtInt(r.impressions)}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+  </table>` : '<div class="empty">No city data.</div>';
+}
+document.getElementById('city-filter').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase();
+  renderCityTable(cityRowsCache.filter(r => r.name.toLowerCase().includes(q)));
+});
+
+/* ============================================================
+   DEVICE & DEMOGRAPHICS
+   ============================================================ */
+let devChartInstance = null;
+async function loadDeviceDemo(start, end){
+  const devSql = `
+    SELECT segments_device AS device,
+      SUM(metrics_impressions) AS impressions, SUM(metrics_clicks) AS clicks,
+      ROUND(SUM(metrics_cost_micros)/1000000,2) AS spend,
+      ROUND(SUM(metrics_conversions),1) AS conversions
+    FROM ${T('CampaignBasicStats')}
+    WHERE segments_date BETWEEN '${start}' AND '${end}'
+    GROUP BY 1 ORDER BY spend DESC
+  `;
+  const devRows = await runQuery(devSql);
+  document.getElementById('dev-table').innerHTML = devRows.length ? `<table>
+    <tr><th>Device</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>Conversions</th></tr>
+    ${devRows.map(r=>`<tr><td>${r.device}</td><td>${fmtInt(r.impressions)}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+  </table>` : '<div class="empty">No device data.</div>';
+  if (devChartInstance) devChartInstance.destroy();
+  devChartInstance = new Chart(document.getElementById('dev-chart'), {
+    type:'doughnut',
+    data:{ labels: devRows.map(r=>r.device), datasets:[{ data: devRows.map(r=>num(r.spend)), backgroundColor:['#0f6e6e','#4338ca','#b7791f','#9d174d','#166534'] }] },
+    options:{ responsive:true, maintainAspectRatio:false }
+  });
+
+  try {
+    const ageSql = `
+      SELECT ar.age_range_type AS age,
+        SUM(ars.metrics_impressions) AS impressions,
+        ROUND(SUM(ars.metrics_cost_micros)/1000000,2) AS spend,
+        ROUND(SUM(ars.metrics_conversions),1) AS conversions
+      FROM ${T('AgeRangeStats')} ars
+      JOIN ${T('AgeRange')} ar ON ars.criterion_id = ar.criterion_id
+      WHERE ars.segments_date BETWEEN '${start}' AND '${end}'
+      GROUP BY 1 ORDER BY spend DESC
+    `;
+    const ageRows = await runQuery(ageSql);
+    document.getElementById('age-table').innerHTML = ageRows.length ? `<table>
+      <tr><th>Age range</th><th>Impressions</th><th>Spend</th><th>Conversions</th></tr>
+      ${ageRows.map(r=>`<tr><td>${r.age}</td><td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+    </table>` : '<div class="empty">No age range data (excluded from PMax by design).</div>';
+  } catch(e) {
+    document.getElementById('age-table').innerHTML =
+      `<div class="empty">Column/join names for AgeRangeStats need verifying — run:<br>
+      <code>SELECT column_name FROM \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.INFORMATION_SCHEMA.COLUMNS\`
+      WHERE table_name IN ('ads_AgeRangeStats_${CONFIG.CUSTOMER_SUFFIX}','ads_AgeRange_${CONFIG.CUSTOMER_SUFFIX}')</code><br>
+      then adjust this query. Error: ${e.message}</div>`;
+  }
+
+  try {
+    const genSql = `
+      SELECT g.gender_type AS gender,
+        SUM(gs.metrics_impressions) AS impressions,
+        ROUND(SUM(gs.metrics_cost_micros)/1000000,2) AS spend,
+        ROUND(SUM(gs.metrics_conversions),1) AS conversions
+      FROM ${T('GenderStats')} gs
+      JOIN ${T('Gender')} g ON gs.criterion_id = g.criterion_id
+      WHERE gs.segments_date BETWEEN '${start}' AND '${end}'
+      GROUP BY 1 ORDER BY spend DESC
+    `;
+    const genRows = await runQuery(genSql);
+    document.getElementById('gender-table').innerHTML = genRows.length ? `<table>
+      <tr><th>Gender</th><th>Impressions</th><th>Spend</th><th>Conversions</th></tr>
+      ${genRows.map(r=>`<tr><td>${r.gender}</td><td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+    </table>` : '<div class="empty">No gender data.</div>';
+  } catch(e) {
+    document.getElementById('gender-table').innerHTML =
+      `<div class="empty">Column/join names for GenderStats need verifying — run:<br>
+      <code>SELECT column_name FROM \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.INFORMATION_SCHEMA.COLUMNS\`
+      WHERE table_name IN ('ads_GenderStats_${CONFIG.CUSTOMER_SUFFIX}','ads_Gender_${CONFIG.CUSTOMER_SUFFIX}')</code><br>
+      then adjust this query. Error: ${e.message}</div>`;
+  }
+}
+</script>
+</body>
+</html>
