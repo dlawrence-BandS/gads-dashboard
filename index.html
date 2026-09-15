@@ -79,6 +79,7 @@
     <input type="date" id="startDate" style="display:none">
     <input type="date" id="endDate" style="display:none">
     <button class="btn-primary" id="loadBtn">Load data</button>
+    <span class="signed" id="rangeLabel"></span>
     <button class="btn-ghost" id="signInBtn">Sign in with Google</button>
     <span class="signed" id="signedStatus"></span>
   </div>
@@ -103,7 +104,7 @@
   <section class="panel active" id="panel-overview">
     <div class="cards" id="ov-cards"></div>
     <div class="section">
-      <h2>Spend &amp; conversions by channel</h2>
+      <h2>Spend &amp; conversions by channel <button class="btn-ghost" id="ov-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
       <div class="desc">All campaign types, selected date range. Click a row to jump to its tab.</div>
       <div id="ov-table"><div class="loading">Sign in and load data to begin</div></div>
     </div>
@@ -138,7 +139,7 @@
     </div>
     <div class="section">
       <h2>Top products by spend</h2>
-      <div class="desc">From ShoppingProductStats — column names verified against your account below the table.</div>
+      <div class="desc">From ShoppingProductStats. Note: Google's Ads reporting API does not expose product titles here (that data lives only in Merchant Center) — shown by item ID, brand and category instead.</div>
       <div id="shop-products"><div class="loading">Load data to begin</div></div>
     </div>
   </section>
@@ -161,8 +162,13 @@
   <!-- SEARCH TERMS -->
   <section class="panel" id="panel-searchterms">
     <div class="section">
-      <h2>Search terms</h2>
+      <h2>Search terms <button class="btn-ghost" id="st-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
       <div class="desc">What people actually typed before your ad showed. High cost / zero conversion terms are flagged — good negative-keyword candidates.</div>
+      <div style="margin-bottom:12px;">
+        <button class="btn-ghost" data-brandfilter="all" style="color:var(--ink);border-color:var(--border);background:var(--teal-light);">All terms</button>
+        <button class="btn-ghost" data-brandfilter="brand" style="color:var(--ink);border-color:var(--border);">Brand</button>
+        <button class="btn-ghost" data-brandfilter="nonbrand" style="color:var(--ink);border-color:var(--border);">Non-brand</button>
+      </div>
       <div id="st-table"><div class="loading">Load data to begin</div></div>
     </div>
   </section>
@@ -177,7 +183,7 @@
         <div id="vid-campaigns"><div class="loading">Load data to begin</div></div>
       </div>
       <div class="section">
-        <h2>Top videos by views</h2>
+        <h2>Top videos by spend</h2>
         <div id="vid-videos"><div class="loading">Load data to begin</div></div>
       </div>
     </div>
@@ -198,9 +204,15 @@
 
   <!-- REGIONS -->
   <section class="panel" id="panel-regions">
-    <div class="note">Google's own geo granularity (not yet mapped to your TV region groupings — North East / Yorkshire / Midlands etc). That mapping is the next build step once this base view is confirmed working.</div>
+    <div class="note">Your account's geo reference table has no generic "Region" target type — targeting sits mostly at City/District/County/Postcode level. It does, however, include a <strong>"TV Region"</strong> type (14 entries UK-wide), which is very likely the same regional grouping your TV/addressable dashboard uses (North East, Yorkshire, Midlands, etc.) — shown as its own table below for direct comparison.</div>
     <div class="section">
-      <h2>Performance by region</h2>
+      <h2>By TV Region (Google's own grouping)</h2>
+      <div class="desc">If these names match your TV dashboard's region set, this is your most useful cross-channel view.</div>
+      <div id="reg-tvregion-table"><div class="loading">Load data to begin</div></div>
+    </div>
+    <div class="section">
+      <h2>By location (all granularities) <button class="btn-ghost" id="reg-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
+      <div class="desc">Every resolvable geo target hit — mixed City/District/County/Postcode. Type column shows granularity.</div>
       <div id="reg-table"><div class="loading">Load data to begin</div></div>
     </div>
   </section>
@@ -208,7 +220,7 @@
   <!-- CITIES -->
   <section class="panel" id="panel-cities">
     <div class="section">
-      <h2>Performance by city</h2>
+      <h2>Performance by city <button class="btn-ghost" id="city-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
       <div class="desc">Resolved via geo_target_reference (Target Type = City). Search box filters client-side.</div>
       <input type="text" id="city-filter" placeholder="Search city or region…" style="width:280px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;margin-bottom:12px;">
       <div id="city-table"><div class="loading">Load data to begin</div></div>
@@ -290,6 +302,12 @@ async function runQuery(sql){
     headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ query: sql, useLegacySql: false, location: CONFIG.LOCATION, timeoutMs: 30000 })
   });
+  if (res.status === 401) {
+    accessToken = null;
+    document.getElementById('signedStatus').textContent = 'Session expired';
+    document.getElementById('signInBtn').textContent = 'Re-authorise';
+    throw new Error('AUTH_EXPIRED');
+  }
   const data = await res.json();
   if (data.error) throw new Error(data.error.message || 'BigQuery error');
   const fields = (data.schema && data.schema.fields) || [];
@@ -305,6 +323,19 @@ const fmtInt = (v) => num(v).toLocaleString('en-GB', {maximumFractionDigits:0});
 const fmtGBP = (v) => '£' + num(v).toLocaleString('en-GB', {maximumFractionDigits:0});
 const fmtPct = (v) => (num(v)*100).toFixed(2) + '%';
 const safeDiv = (a,b) => b ? a/b : 0;
+
+/* ---------- CSV export ---------- */
+function toCSV(headers, rows){
+  const esc = (v) => `"${String(v ?? '').replace(/"/g,'""')}"`;
+  return [headers.map(esc).join(','), ...rows.map(r => r.map(esc).join(','))].join('\n');
+}
+function downloadCSV(filename, headers, rows){
+  const blob = new Blob([toCSV(headers, rows)], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 
 /* ============================================================
    DATE RANGE HANDLING
@@ -325,49 +356,81 @@ function getDateRange(){
 }
 document.getElementById('datePreset').addEventListener('change', (e) => {
   const custom = e.target.value === 'custom';
-  document.getElementById('startDate').style.display = custom ? 'inline-block' : 'none';
-  document.getElementById('endDate').style.display = custom ? 'inline-block' : 'none';
+  const startEl = document.getElementById('startDate');
+  const endEl = document.getElementById('endDate');
+  startEl.style.display = custom ? 'inline-block' : 'none';
+  endEl.style.display = custom ? 'inline-block' : 'none';
+  // Pre-fill custom fields with a sensible default (last 90 days) instead of leaving them blank
+  if (custom && !startEl.value) {
+    const end = new Date(); const start = new Date();
+    start.setDate(end.getDate() - 90);
+    const iso = (d) => d.toISOString().slice(0,10);
+    startEl.value = iso(start); endEl.value = iso(end);
+  }
 });
 
 /* ============================================================
-   TABS
+   TABS — lazy loading: a tab only queries BigQuery the first time
+   it's opened for the currently loaded date range, or when Load
+   data is clicked while it's the active tab. Switching tabs never
+   re-runs queries you've already fetched for that range.
    ============================================================ */
+const TAB_LOADERS = {
+  overview: loadOverview, pmax: loadPMax, shopping: loadShopping, search: loadSearch,
+  searchterms: loadSearchTerms, video: loadVideo, demandgen: loadDemandGen,
+  regions: loadRegions, cities: loadCities, device: loadDeviceDemo
+};
+let currentRangeKey = null;   // "start|end" for the range currently selected
+let loadedTabs = {};          // tabKey -> rangeKey it was last loaded for
+
 document.getElementById('tabs').addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-tab]');
   if (!btn) return;
   document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  const tab = btn.dataset.tab;
+  document.getElementById('panel-' + tab).classList.add('active');
+  maybeLoadTab(tab);
 });
 
-/* ============================================================
-   LOAD DATA — runs every tab's query
-   ============================================================ */
-document.getElementById('loadBtn').addEventListener('click', loadAll);
+async function maybeLoadTab(tab){
+  if (!accessToken || !currentRangeKey) return;       // nothing picked/loaded yet
+  if (loadedTabs[tab] === currentRangeKey) return;     // already have this tab for this range
+  await runTabLoad(tab);
+}
 
-async function loadAll(){
+async function runTabLoad(tab){
+  const [start, end] = currentRangeKey.split('|');
+  try {
+    await TAB_LOADERS[tab](start, end);
+    loadedTabs[tab] = currentRangeKey;
+  } catch (err) {
+    console.error(err);
+    if (err.message === 'AUTH_EXPIRED') {
+      alert('Your Google sign-in has expired — click "Re-authorise" then Load data again.');
+    } else {
+      alert(`Something went wrong loading this tab (${tab}) — check the browser console for the failing query.`);
+    }
+  }
+}
+
+/* ============================================================
+   LOAD DATA — validates the range, then (re)loads whichever tab
+   is currently open. Other tabs pick up the new range lazily the
+   next time you click into them.
+   ============================================================ */
+document.getElementById('loadBtn').addEventListener('click', async () => {
   if (!accessToken) { alert('Sign in with Google first.'); return; }
   const { start, end } = getDateRange();
   if (!start || !end) { alert('Pick a valid date range.'); return; }
-  try {
-    await Promise.all([
-      loadOverview(start, end),
-      loadPMax(start, end),
-      loadShopping(start, end),
-      loadSearch(start, end),
-      loadSearchTerms(start, end),
-      loadVideo(start, end),
-      loadDemandGen(start, end),
-      loadRegions(start, end),
-      loadCities(start, end),
-      loadDeviceDemo(start, end)
-    ]);
-  } catch (err) {
-    console.error(err);
-    alert('Something went wrong loading data — check the browser console for the failing query.');
-  }
-}
+  if (start > end) { alert('Start date must be before end date.'); return; }
+  currentRangeKey = `${start}|${end}`;
+  loadedTabs = {};   // invalidate every tab's cache — each refetches next time it's viewed
+  document.getElementById('rangeLabel').textContent = `${start} → ${end}`;
+  const activeTab = document.querySelector('nav.tabs button.active').dataset.tab;
+  await runTabLoad(activeTab);
+});
 
 /* ---------- shared campaign-base join fragment ---------- */
 const campaignBase = () => `
@@ -375,10 +438,19 @@ const campaignBase = () => `
   JOIN ${T('Campaign')} c ON s.campaign_id = c.campaign_id
 `;
 
+/* ---------- loading state helper ---------- */
+function spin(ids){
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '<div class="loading"><span class="spinner"></span>Loading…</div>';
+  });
+}
+
 /* ============================================================
    OVERVIEW
    ============================================================ */
 async function loadOverview(start, end){
+  spin(['ov-cards', 'ov-table']);
   const sql = `
     SELECT
       c.campaign_advertising_channel_type AS channel,
@@ -427,7 +499,9 @@ function badgeFor(channel){
 }
 const tabForChannel = {PERFORMANCE_MAX:'pmax', SHOPPING:'shopping', SEARCH:'search', VIDEO:'video', DEMAND_GEN:'demandgen'};
 
+let ovRowsCache = [];
 function renderOverviewTable(rows){
+  ovRowsCache = rows;
   if (!rows.length){ document.getElementById('ov-table').innerHTML = '<div class="empty">No data for this range.</div>'; return; }
   const html = `<table>
     <tr><th>Channel</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>Conversions</th><th>CVR</th><th>CPA</th></tr>
@@ -478,6 +552,7 @@ async function renderOverviewChart(start, end){
    PMAX
    ============================================================ */
 async function loadPMax(start, end){
+  spin(['pmax-cards', 'pmax-campaigns', 'pmax-assetgroups']);
   const sql = `
     SELECT c.campaign_id, c.campaign_name,
       SUM(s.metrics_impressions) AS impressions, SUM(s.metrics_clicks) AS clicks,
@@ -510,7 +585,8 @@ async function loadPMax(start, end){
         ROUND(SUM(ags.metrics_cost_micros)/1000000,2) AS spend,
         ROUND(SUM(ags.metrics_conversions),1) AS conversions
       FROM ${T('AssetGroupProductGroupStats')} ags
-      JOIN ${T('AssetGroup')} ag ON ags.asset_group_id = ag.asset_group_id
+      JOIN ${T('AssetGroup')} ag
+        ON CAST(REGEXP_EXTRACT(ags.asset_group_product_group_view_asset_group, r'(\\d+)$') AS INT64) = ag.asset_group_id
       WHERE ags.segments_date BETWEEN '${start}' AND '${end}'
       GROUP BY 1 ORDER BY spend DESC LIMIT 25
     `;
@@ -532,6 +608,7 @@ async function loadPMax(start, end){
    SHOPPING
    ============================================================ */
 async function loadShopping(start, end){
+  spin(['shop-cards', 'shop-campaigns', 'shop-products']);
   const sql = `
     SELECT c.campaign_id, c.campaign_name,
       SUM(s.metrics_impressions) AS impressions, SUM(s.metrics_clicks) AS clicks,
@@ -557,25 +634,23 @@ async function loadShopping(start, end){
 
   try {
     const prodSql = `
-      SELECT segments_product_title AS title,
+      SELECT segments_product_item_id AS item_id,
+        segments_product_brand AS brand,
+        segments_product_type_l1 AS category,
         SUM(metrics_impressions) AS impressions,
         ROUND(SUM(metrics_cost_micros)/1000000,2) AS spend,
         ROUND(SUM(metrics_conversions),1) AS conversions
       FROM ${T('ShoppingProductStats')}
       WHERE segments_date BETWEEN '${start}' AND '${end}'
-      GROUP BY 1 ORDER BY spend DESC LIMIT 25
+      GROUP BY 1,2,3 ORDER BY spend DESC LIMIT 30
     `;
     const prodRows = await runQuery(prodSql);
     document.getElementById('shop-products').innerHTML = prodRows.length ? `<table>
-      <tr><th>Product</th><th>Impressions</th><th>Spend</th><th>Conversions</th></tr>
-      ${prodRows.map(r=>`<tr><td>${r.title||'(unknown)'}</td><td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+      <tr><th>Item ID</th><th>Brand</th><th>Category</th><th>Impressions</th><th>Spend</th><th>Conversions</th></tr>
+      ${prodRows.map(r=>`<tr><td>${r.item_id||'—'}</td><td>${r.brand||'—'}</td><td>${r.category||'—'}</td><td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
     </table>` : '<div class="empty">No product-level data.</div>';
   } catch(e) {
-    document.getElementById('shop-products').innerHTML =
-      `<div class="empty">Column names for ShoppingProductStats need verifying — run:<br>
-      <code>SELECT column_name FROM \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.INFORMATION_SCHEMA.COLUMNS\`
-      WHERE table_name = 'ads_ShoppingProductStats_${CONFIG.CUSTOMER_SUFFIX}'</code><br>
-      then adjust the query in this file (the field is likely named differently to segments_product_title). Error: ${e.message}</div>`;
+    document.getElementById('shop-products').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
   }
 }
 
@@ -583,6 +658,7 @@ async function loadShopping(start, end){
    SEARCH
    ============================================================ */
 async function loadSearch(start, end){
+  spin(['srch-cards', 'srch-campaigns', 'srch-keywords']);
   const sql = `
     SELECT c.campaign_id, c.campaign_name,
       SUM(s.metrics_impressions) AS impressions, SUM(s.metrics_clicks) AS clicks,
@@ -607,33 +683,39 @@ async function loadSearch(start, end){
 
   try {
     const kwSql = `
-      SELECT k.keyword_text AS keyword,
+      SELECT k.ad_group_criterion_keyword_text AS keyword,
+        k.ad_group_criterion_keyword_match_type AS match_type,
         SUM(ks.metrics_clicks) AS clicks,
         ROUND(SUM(ks.metrics_cost_micros)/1000000,2) AS spend,
         ROUND(SUM(ks.metrics_conversions),1) AS conversions
       FROM ${T('KeywordStats')} ks
-      JOIN ${T('Keyword')} k ON ks.criterion_id = k.criterion_id AND ks.ad_group_id = k.ad_group_id
+      JOIN ${T('Keyword')} k
+        ON ks.ad_group_criterion_criterion_id = k.ad_group_criterion_criterion_id
+        AND ks.ad_group_id = k.ad_group_id
       WHERE ks.segments_date BETWEEN '${start}' AND '${end}'
-      GROUP BY 1 ORDER BY spend DESC LIMIT 25
+      GROUP BY 1,2 ORDER BY spend DESC LIMIT 25
     `;
     const kwRows = await runQuery(kwSql);
     document.getElementById('srch-keywords').innerHTML = kwRows.length ? `<table>
-      <tr><th>Keyword</th><th>Clicks</th><th>Spend</th><th>Conversions</th></tr>
-      ${kwRows.map(r=>`<tr><td>${r.keyword}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+      <tr><th>Keyword</th><th>Match type</th><th>Clicks</th><th>Spend</th><th>Conversions</th></tr>
+      ${kwRows.map(r=>`<tr><td>${r.keyword}</td><td>${r.match_type||''}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
     </table>` : '<div class="empty">No keyword data.</div>';
   } catch(e) {
-    document.getElementById('srch-keywords').innerHTML =
-      `<div class="empty">Join key for KeywordStats → Keyword needs verifying — run:<br>
-      <code>SELECT column_name FROM \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.INFORMATION_SCHEMA.COLUMNS\`
-      WHERE table_name IN ('ads_KeywordStats_${CONFIG.CUSTOMER_SUFFIX}','ads_Keyword_${CONFIG.CUSTOMER_SUFFIX}')</code><br>
-      then adjust the join in this file. Error: ${e.message}</div>`;
+    document.getElementById('srch-keywords').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
   }
 }
 
 /* ============================================================
    SEARCH TERMS
    ============================================================ */
+let searchTermsCache = [];
+const BRAND_TERMS = ['barker', 'stonehouse', 'b&s', 'bands'];
+function isBrandTerm(term){
+  const t = (term||'').toLowerCase();
+  return BRAND_TERMS.some(b => t.includes(b));
+}
 async function loadSearchTerms(start, end){
+  spin(['st-table']);
   try {
     const sql = `
       SELECT search_term_view_search_term AS term,
@@ -642,27 +724,38 @@ async function loadSearchTerms(start, end){
         ROUND(SUM(metrics_conversions),1) AS conversions
       FROM ${T('SearchQueryStats')}
       WHERE segments_date BETWEEN '${start}' AND '${end}'
-      GROUP BY 1 ORDER BY spend DESC LIMIT 50
+      GROUP BY 1 ORDER BY spend DESC LIMIT 300
     `;
-    const rows = await runQuery(sql);
-    document.getElementById('st-table').innerHTML = rows.length ? `<table>
-      <tr><th>Search term</th><th>Clicks</th><th>Spend</th><th>Conversions</th><th></th></tr>
-      ${rows.map(r=>`<tr><td>${r.term}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td>
-        <td>${(num(r.spend)>20 && num(r.conversions)===0) ? '<span class="badge" style="background:#fee2e2;color:#991b1b;">wasted spend?</span>' : ''}</td></tr>`).join('')}
-    </table>` : '<div class="empty">No search term data.</div>';
+    searchTermsCache = await runQuery(sql);
+    renderSearchTerms('all');
   } catch(e) {
-    document.getElementById('st-table').innerHTML =
-      `<div class="empty">Column name for the search term text field needs verifying — run:<br>
-      <code>SELECT column_name FROM \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.INFORMATION_SCHEMA.COLUMNS\`
-      WHERE table_name = 'ads_SearchQueryStats_${CONFIG.CUSTOMER_SUFFIX}'</code><br>
-      then adjust the query in this file. Error: ${e.message}</div>`;
+    document.getElementById('st-table').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
   }
 }
+function renderSearchTerms(filter){
+  let rows = searchTermsCache;
+  if (filter === 'brand') rows = rows.filter(r => isBrandTerm(r.term));
+  if (filter === 'nonbrand') rows = rows.filter(r => !isBrandTerm(r.term));
+  rows = rows.slice(0, 50);
+  document.getElementById('st-table').innerHTML = rows.length ? `<table>
+    <tr><th>Search term</th><th>Clicks</th><th>Spend</th><th>Conversions</th><th></th></tr>
+    ${rows.map(r=>`<tr><td>${r.term}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td>
+      <td>${(num(r.spend)>20 && num(r.conversions)===0) ? '<span class="badge" style="background:#fee2e2;color:#991b1b;">wasted spend?</span>' : ''}</td></tr>`).join('')}
+  </table>` : '<div class="empty">No search terms in this category.</div>';
+}
+document.getElementById('panel-searchterms').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-brandfilter]');
+  if (!btn) return;
+  document.querySelectorAll('#panel-searchterms button[data-brandfilter]').forEach(b => b.style.background = 'transparent');
+  btn.style.background = 'var(--teal-light)';
+  renderSearchTerms(btn.dataset.brandfilter);
+});
 
 /* ============================================================
    VIDEO / YOUTUBE
    ============================================================ */
 async function loadVideo(start, end){
+  spin(['vid-cards', 'vid-campaigns', 'vid-videos']);
   const sql = `
     SELECT c.campaign_id, c.campaign_name,
       SUM(s.metrics_impressions) AS impressions,
@@ -676,17 +769,21 @@ async function loadVideo(start, end){
   const rows = await runQuery(sql);
   const totals = rows.reduce((a,r)=>({spend:a.spend+num(r.spend), impr:a.impr+num(r.impressions)}), {spend:0,impr:0});
 
+  // True view counts & CPV live on GeoStats (metrics_video_trueview_views / metrics_trueview_average_cpv),
+  // not on VideoBasicStats — confirmed against the account schema.
   let viewTotals = {views:0, cpv:0};
   try {
     const vidSql = `
-      SELECT SUM(metrics_video_views) AS views,
-        ROUND(SUM(metrics_cost_micros)/1000000,2) AS spend
-      FROM ${T('VideoBasicStats')}
-      WHERE segments_date BETWEEN '${start}' AND '${end}'
+      SELECT SUM(g.metrics_video_trueview_views) AS views,
+        ROUND(SUM(g.metrics_cost_micros)/1000000,2) AS spend
+      FROM ${T('GeoStats')} g
+      JOIN ${T('Campaign')} c ON g.campaign_id = c.campaign_id
+      WHERE c.campaign_advertising_channel_type = 'VIDEO'
+        AND g.segments_date BETWEEN '${start}' AND '${end}'
     `;
     const vr = await runQuery(vidSql);
     if (vr.length) viewTotals = { views: num(vr[0].views), cpv: safeDiv(num(vr[0].spend), num(vr[0].views)) };
-  } catch(e) { /* handled below in videos table */ }
+  } catch(e) { console.warn('Video view totals query failed:', e.message); }
 
   document.getElementById('vid-cards').innerHTML = [
     ['Spend', fmtGBP(totals.spend)], ['Impressions', fmtInt(totals.impr)],
@@ -698,27 +795,27 @@ async function loadVideo(start, end){
     ${rows.map(r=>`<tr><td>${r.campaign_name}</td><td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td></tr>`).join('')}
   </table>` : '<div class="empty">No Video campaign data.</div>';
 
+  // Note: Google's Ads reporting API does not expose a per-video view count anywhere
+  // (only account/campaign-level TrueView totals, shown in the cards above) — so this
+  // table ranks by spend/impressions with real titles, not views.
   try {
     const vTopSql = `
-      SELECT v.video_id,
-        SUM(vs.metrics_video_views) AS views,
+      SELECT v.video_title AS title, v.video_id,
+        SUM(vs.metrics_impressions) AS impressions,
+        SUM(vs.metrics_clicks) AS clicks,
         ROUND(SUM(vs.metrics_cost_micros)/1000000,2) AS spend
       FROM ${T('VideoBasicStats')} vs
       LEFT JOIN ${T('Video')} v ON vs.video_id = v.video_id
       WHERE vs.segments_date BETWEEN '${start}' AND '${end}'
-      GROUP BY 1 ORDER BY views DESC LIMIT 15
+      GROUP BY 1,2 ORDER BY spend DESC LIMIT 15
     `;
     const vTop = await runQuery(vTopSql);
     document.getElementById('vid-videos').innerHTML = vTop.length ? `<table>
-      <tr><th>Video ID</th><th>Views</th><th>Spend</th></tr>
-      ${vTop.map(r=>`<tr><td>${r.video_id}</td><td>${fmtInt(r.views)}</td><td>${fmtGBP(r.spend)}</td></tr>`).join('')}
+      <tr><th>Video</th><th>Impressions</th><th>Clicks</th><th>Spend</th></tr>
+      ${vTop.map(r=>`<tr><td>${r.title||r.video_id}</td><td>${fmtInt(r.impressions)}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td></tr>`).join('')}
     </table>` : '<div class="empty">No video-level data.</div>';
   } catch(e) {
-    document.getElementById('vid-videos').innerHTML =
-      `<div class="empty">Column names for VideoBasicStats/Video need verifying — run:<br>
-      <code>SELECT column_name FROM \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.INFORMATION_SCHEMA.COLUMNS\`
-      WHERE table_name IN ('ads_VideoBasicStats_${CONFIG.CUSTOMER_SUFFIX}','ads_Video_${CONFIG.CUSTOMER_SUFFIX}')</code><br>
-      then adjust this query. Error: ${e.message}</div>`;
+    document.getElementById('vid-videos').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
   }
 }
 
@@ -726,6 +823,7 @@ async function loadVideo(start, end){
    DEMAND GEN
    ============================================================ */
 async function loadDemandGen(start, end){
+  spin(['dg-cards', 'dg-campaigns']);
   const sql = `
     SELECT c.campaign_id, c.campaign_name, s.segments_date AS date,
       SUM(s.metrics_impressions) AS impressions, SUM(s.metrics_clicks) AS clicks,
@@ -764,34 +862,48 @@ async function loadDemandGen(start, end){
    REGIONS
    ============================================================ */
 async function loadRegions(start, end){
+  spin(['reg-tvregion-table', 'reg-table']);
   const sql = `
-    SELECT segments_geo_target_most_specific_location AS geo_id, segments_device AS device,
+    SELECT segments_geo_target_most_specific_location AS geo_id,
       SUM(metrics_impressions) AS impressions, SUM(metrics_clicks) AS clicks,
       ROUND(SUM(metrics_cost_micros)/1000000,2) AS spend,
       ROUND(SUM(metrics_conversions),1) AS conversions
     FROM ${T('GeoStats')}
     WHERE segments_date BETWEEN '${start}' AND '${end}'
-    GROUP BY 1,2
+    GROUP BY 1
   `;
   const geoRows = await runQuery(sql);
-  const refSql = `SELECT \`Criteria ID\` AS id, Name AS name, \`Target Type\` AS type FROM ${GEO_REF()} WHERE \`Target Type\` IN ('Region','County','Country/Region')`;
-  let refRows = [];
-  try { refRows = await runQuery(refSql); } catch(e){ /* fall through, show raw IDs */ }
-  const refMap = {}; refRows.forEach(r => refMap[r.id] = r.name);
 
-  const byRegion = {};
+  // Resolve against the WHOLE reference table (no Target Type filter) — this account's
+  // geo reference has no generic "Region" type, so filtering to one was dropping almost everything.
+  const refSql = `SELECT \`Criteria ID\` AS id, Name AS name, \`Target Type\` AS type FROM ${GEO_REF()} WHERE \`Country Code\` = 'GB'`;
+  const refRows = await runQuery(refSql);
+  const refMap = {}; refRows.forEach(r => refMap[r.id] = {name: r.name, type: r.type});
+
+  const byLocation = {};
   geoRows.forEach(r => {
     const idMatch = (r.geo_id||'').match(/(\d+)$/);
     const id = idMatch ? idMatch[1] : null;
-    const name = (id && refMap[id]) ? refMap[id] : (r.geo_id || 'Unknown');
-    byRegion[name] = byRegion[name] || {impressions:0, clicks:0, spend:0, conversions:0};
-    byRegion[name].impressions += num(r.impressions); byRegion[name].clicks += num(r.clicks);
-    byRegion[name].spend += num(r.spend); byRegion[name].conversions += num(r.conversions);
+    const ref = id ? refMap[id] : null;
+    const key = ref ? `${ref.name}|${ref.type}` : (r.geo_id || 'Unknown');
+    byLocation[key] = byLocation[key] || {name: ref ? ref.name : (r.geo_id||'Unknown'), type: ref ? ref.type : '—', impressions:0, clicks:0, spend:0, conversions:0};
+    byLocation[key].impressions += num(r.impressions); byLocation[key].clicks += num(r.clicks);
+    byLocation[key].spend += num(r.spend); byLocation[key].conversions += num(r.conversions);
   });
-  const rows = Object.entries(byRegion).sort((a,b)=>b[1].spend-a[1].spend).slice(0,60);
+  const allRows = Object.values(byLocation).sort((a,b)=>b.spend-a.spend);
+
+  // TV Region specific table — the type most likely to match your TV dashboard's grouping
+  const tvRows = allRows.filter(r => r.type === 'TV Region');
+  document.getElementById('reg-tvregion-table').innerHTML = tvRows.length ? `<table>
+    <tr><th>TV Region</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>Conversions</th></tr>
+    ${tvRows.map(r=>`<tr><td>${r.name}</td><td>${fmtInt(r.impressions)}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+  </table>` : '<div class="empty">No spend resolved to TV Region-level targeting in this range — your campaigns may be targeting at City/District level instead, which shows in the table below.</div>';
+
+  const rows = allRows.slice(0,80);
+  regRowsCache = allRows;
   document.getElementById('reg-table').innerHTML = rows.length ? `<table>
-    <tr><th>Region</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>Conversions</th></tr>
-    ${rows.map(([name,v])=>`<tr><td>${name}</td><td>${fmtInt(v.impressions)}</td><td>${fmtInt(v.clicks)}</td><td>${fmtGBP(v.spend)}</td><td>${fmtInt(v.conversions)}</td></tr>`).join('')}
+    <tr><th>Location</th><th>Type</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>Conversions</th></tr>
+    ${rows.map(r=>`<tr><td>${r.name}</td><td>${r.type}</td><td>${fmtInt(r.impressions)}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
   </table>` : '<div class="empty">No geo data.</div>';
 }
 
@@ -799,7 +911,9 @@ async function loadRegions(start, end){
    CITIES
    ============================================================ */
 let cityRowsCache = [];
+let regRowsCache = [];
 async function loadCities(start, end){
+  spin(['city-table']);
   const sql = `
     SELECT g.segments_geo_target_most_specific_location AS geo_id,
       SUM(g.metrics_impressions) AS impressions, SUM(g.metrics_clicks) AS clicks,
@@ -837,6 +951,7 @@ document.getElementById('city-filter').addEventListener('input', (e) => {
    ============================================================ */
 let devChartInstance = null;
 async function loadDeviceDemo(start, end){
+  spin(['dev-table', 'age-table', 'gender-table']);
   const devSql = `
     SELECT segments_device AS device,
       SUM(metrics_impressions) AS impressions, SUM(metrics_clicks) AS clicks,
@@ -860,12 +975,14 @@ async function loadDeviceDemo(start, end){
 
   try {
     const ageSql = `
-      SELECT ar.age_range_type AS age,
+      SELECT ar.ad_group_criterion_age_range_type AS age,
         SUM(ars.metrics_impressions) AS impressions,
         ROUND(SUM(ars.metrics_cost_micros)/1000000,2) AS spend,
         ROUND(SUM(ars.metrics_conversions),1) AS conversions
       FROM ${T('AgeRangeStats')} ars
-      JOIN ${T('AgeRange')} ar ON ars.criterion_id = ar.criterion_id
+      JOIN ${T('AgeRange')} ar
+        ON ars.ad_group_criterion_criterion_id = ar.ad_group_criterion_criterion_id
+        AND ars.ad_group_id = ar.ad_group_id
       WHERE ars.segments_date BETWEEN '${start}' AND '${end}'
       GROUP BY 1 ORDER BY spend DESC
     `;
@@ -873,23 +990,21 @@ async function loadDeviceDemo(start, end){
     document.getElementById('age-table').innerHTML = ageRows.length ? `<table>
       <tr><th>Age range</th><th>Impressions</th><th>Spend</th><th>Conversions</th></tr>
       ${ageRows.map(r=>`<tr><td>${r.age}</td><td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
-    </table>` : '<div class="empty">No age range data (excluded from PMax by design).</div>';
+    </table>` : '<div class="empty">No age range data (excluded from PMax by design — Google does not expose demographic breakdowns there).</div>';
   } catch(e) {
-    document.getElementById('age-table').innerHTML =
-      `<div class="empty">Column/join names for AgeRangeStats need verifying — run:<br>
-      <code>SELECT column_name FROM \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.INFORMATION_SCHEMA.COLUMNS\`
-      WHERE table_name IN ('ads_AgeRangeStats_${CONFIG.CUSTOMER_SUFFIX}','ads_AgeRange_${CONFIG.CUSTOMER_SUFFIX}')</code><br>
-      then adjust this query. Error: ${e.message}</div>`;
+    document.getElementById('age-table').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
   }
 
   try {
     const genSql = `
-      SELECT g.gender_type AS gender,
+      SELECT g.ad_group_criterion_gender_type AS gender,
         SUM(gs.metrics_impressions) AS impressions,
         ROUND(SUM(gs.metrics_cost_micros)/1000000,2) AS spend,
         ROUND(SUM(gs.metrics_conversions),1) AS conversions
       FROM ${T('GenderStats')} gs
-      JOIN ${T('Gender')} g ON gs.criterion_id = g.criterion_id
+      JOIN ${T('Gender')} g
+        ON gs.ad_group_criterion_criterion_id = g.ad_group_criterion_criterion_id
+        AND gs.ad_group_id = g.ad_group_id
       WHERE gs.segments_date BETWEEN '${start}' AND '${end}'
       GROUP BY 1 ORDER BY spend DESC
     `;
@@ -899,13 +1014,33 @@ async function loadDeviceDemo(start, end){
       ${genRows.map(r=>`<tr><td>${r.gender}</td><td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
     </table>` : '<div class="empty">No gender data.</div>';
   } catch(e) {
-    document.getElementById('gender-table').innerHTML =
-      `<div class="empty">Column/join names for GenderStats need verifying — run:<br>
-      <code>SELECT column_name FROM \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.INFORMATION_SCHEMA.COLUMNS\`
-      WHERE table_name IN ('ads_GenderStats_${CONFIG.CUSTOMER_SUFFIX}','ads_Gender_${CONFIG.CUSTOMER_SUFFIX}')</code><br>
-      then adjust this query. Error: ${e.message}</div>`;
+    document.getElementById('gender-table').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
   }
 }
+
+/* ============================================================
+   CSV EXPORT BUTTONS
+   ============================================================ */
+document.getElementById('ov-export').addEventListener('click', () => {
+  downloadCSV('overview_by_channel.csv',
+    ['Channel','Impressions','Clicks','Spend','Conversions','Conv value'],
+    ovRowsCache.map(r => [r.channel, r.impressions, r.clicks, r.spend, r.conversions, r.conv_value]));
+});
+document.getElementById('st-export').addEventListener('click', () => {
+  downloadCSV('search_terms.csv',
+    ['Term','Clicks','Spend','Conversions'],
+    searchTermsCache.map(r => [r.term, r.clicks, r.spend, r.conversions]));
+});
+document.getElementById('reg-export').addEventListener('click', () => {
+  downloadCSV('regions_by_location.csv',
+    ['Location','Type','Impressions','Clicks','Spend','Conversions'],
+    regRowsCache.map(r => [r.name, r.type, r.impressions, r.clicks, r.spend, r.conversions]));
+});
+document.getElementById('city-export').addEventListener('click', () => {
+  downloadCSV('cities.csv',
+    ['City','Impressions','Clicks','Spend','Conversions'],
+    cityRowsCache.map(r => [r.name, r.impressions, r.clicks, r.spend, r.conversions]));
+});
 </script>
 </body>
 </html>
