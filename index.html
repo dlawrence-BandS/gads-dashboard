@@ -226,7 +226,7 @@
 
     <div class="section">
       <h2>Top audiences</h2>
-      <div class="desc">Resolved against Google's standard Affinity/In-Market categories and your own custom/remarketing segments. Anything neither table recognises shows as a raw criterion ID.</div>
+      <div class="desc">Resolved against Google's standard Affinity/In-Market categories and your own custom/remarketing segments where possible. Video campaigns commonly use newer audience-expansion signals Google doesn't expose a name for anywhere — those show as raw criterion IDs, unbilled (£0), for manual cross-reference in the Ads UI if needed.</div>
       <div id="vid-audience-table"><div class="loading">Load data to begin</div></div>
     </div>
 
@@ -1207,12 +1207,20 @@ async function loadVideo(start, end){
     document.getElementById('vid-placements-table').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
   }
 
-  /* ---- Top audiences: resolved against Google's standard verticals + your own custom segments ---- */
+  /* ---- Top audiences: resolved against Google's standard verticals + your own custom segments ----
+     Confirmed against this account: the criterion IDs actually attached to Video ad
+     groups (11-13 digits) sit in a completely different ID range to both your
+     ads_Audience table (9-digit IDs) and the standard verticals file — with £0 cost
+     across all of them. This is very likely Google's newer audience-expansion/
+     observation-signal mechanism, which has no public name mapping anywhere, including
+     in this data export. Shown as "Unmapped" rather than hidden, since there are only
+     a handful of distinct IDs — worth cross-referencing manually against the Audiences
+     tab inside the relevant Video campaign in the Ads UI if the names matter to you. */
   try {
     const audSql = `
       SELECT
-        COALESCE(v.Category, aud.audience_name, CONCAT('Unresolved criterion ', CAST(s.ad_group_criterion_criterion_id AS STRING))) AS audience,
-        CASE WHEN v.Category IS NOT NULL THEN 'Standard' WHEN aud.audience_name IS NOT NULL THEN 'Custom' ELSE 'Unresolved' END AS source,
+        COALESCE(v.Category, aud.audience_name, CAST(s.ad_group_criterion_criterion_id AS STRING)) AS audience,
+        CASE WHEN v.Category IS NOT NULL THEN 'Standard' WHEN aud.audience_name IS NOT NULL THEN 'Custom' ELSE 'Unmapped' END AS source,
         SUM(s.metrics_impressions) AS impressions,
         ROUND(SUM(s.metrics_cost_micros)/1000000,2) AS spend,
         ROUND(SUM(s.metrics_conversions),1) AS conversions
@@ -1225,10 +1233,13 @@ async function loadVideo(start, end){
         ON CAST(s.ad_group_criterion_criterion_id AS STRING) = CAST(aud.audience_id AS STRING)
       WHERE c.campaign_advertising_channel_type = 'VIDEO'
         AND s.segments_date BETWEEN '${start}' AND '${end}'
-      GROUP BY 1,2 ORDER BY spend DESC LIMIT 25
+      GROUP BY 1,2 ORDER BY impressions DESC LIMIT 25
     `;
     const audRows = await runQuery(audSql);
-    document.getElementById('vid-audience-table').innerHTML = audRows.length ? `<table>
+    const anyMapped = audRows.some(r => r.source !== 'Unmapped');
+    document.getElementById('vid-audience-table').innerHTML = audRows.length ? `
+      ${anyMapped ? '' : '<div class="desc" style="margin-bottom:10px;">None of these resolved to a name — see the note above. Criterion IDs shown as-is for manual cross-referencing.</div>'}
+      <table>
       <tr><th>Audience</th><th>Type</th><th>Impressions</th><th>Spend</th><th>Conversions</th></tr>
       ${audRows.map(r=>`<tr><td>${r.audience}</td><td>${r.source}</td><td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
     </table>` : '<div class="empty">No audience-level data for this range.</div>';
