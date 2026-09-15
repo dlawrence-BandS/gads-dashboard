@@ -242,15 +242,13 @@
       </div>
     </div>
 
-    <div class="two-col">
-      <div class="section">
-        <h2>Campaigns</h2>
-        <div id="vid-campaigns"><div class="loading">Load data to begin</div></div>
-      </div>
-      <div class="section">
-        <h2>Videos — real views, view rate &amp; completion</h2>
-        <div id="vid-videos"><div class="loading">Load data to begin</div></div>
-      </div>
+    <div class="section">
+      <h2>Campaigns</h2>
+      <div id="vid-campaigns"><div class="loading">Load data to begin</div></div>
+    </div>
+    <div class="section">
+      <h2>Videos — real views, view rate &amp; completion</h2>
+      <div id="vid-videos"><div class="loading">Load data to begin</div></div>
     </div>
   </section>
 
@@ -1258,7 +1256,7 @@ async function loadVideo(start, end){
       JOIN ${T('Campaign')} c ON h.campaign_id = c.campaign_id
       WHERE c.campaign_advertising_channel_type = 'VIDEO'
         AND h.segments_date BETWEEN '${start}' AND '${end}'
-      GROUP BY 1 ORDER BY CAST(h.hour AS INT64)
+      GROUP BY 1 ORDER BY CAST(hour AS INT64)
     `;
     const hourRows = await runQuery(hourSql);
     if (window.chartInstances['vid-hour-chart']) window.chartInstances['vid-hour-chart'].destroy();
@@ -1301,7 +1299,10 @@ async function loadVideo(start, end){
         vd.views, vd.view_rate, vd.avg_cpv, vd.q100
       FROM clicks_data c
       FULL OUTER JOIN view_data vd ON c.video_id = vd.video_id
-      LEFT JOIN ${T('Video')} v ON COALESCE(c.video_id, vd.video_id) = v.video_id
+      LEFT JOIN (
+        SELECT video_id, ANY_VALUE(video_title) AS video_title, ANY_VALUE(video_duration_millis) AS video_duration_millis
+        FROM ${T('Video')} GROUP BY video_id
+      ) v ON COALESCE(c.video_id, vd.video_id) = v.video_id
       ORDER BY c.spend DESC LIMIT 20
     `;
     const vTop = await runQuery(vTopSql);
