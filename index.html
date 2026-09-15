@@ -78,6 +78,9 @@
     </select>
     <input type="date" id="startDate" style="display:none">
     <input type="date" id="endDate" style="display:none">
+    <label class="signed" style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+      <input type="checkbox" id="yoyToggle"> vs Year on Year
+    </label>
     <button class="btn-primary" id="loadBtn">Load data</button>
     <span class="signed" id="rangeLabel"></span>
     <button class="btn-ghost" id="signInBtn">Sign in with Google</button>
@@ -124,7 +127,7 @@
     </div>
     <div class="two-col">
       <div class="section">
-        <h2>Campaigns</h2>
+        <h2>Campaigns <button class="btn-ghost" id="pmax-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
         <div id="pmax-campaigns"><div class="loading">Load data to begin</div></div>
       </div>
       <div class="section">
@@ -146,7 +149,7 @@
       <div id="shop-campaigns"><div class="loading">Load data to begin</div></div>
     </div>
     <div class="section">
-      <h2>Top products by spend</h2>
+      <h2>Top products by spend <button class="btn-ghost" id="shop-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
       <div class="desc">Titles resolved via GA4 item data where possible — see note below the table if that join doesn't apply.</div>
       <div id="shop-products"><div class="loading">Load data to begin</div></div>
     </div>
@@ -165,7 +168,7 @@
         <div id="srch-campaigns"><div class="loading">Load data to begin</div></div>
       </div>
       <div class="section">
-        <h2>Top keywords by spend</h2>
+        <h2>Top keywords by spend <button class="btn-ghost" id="srch-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
         <div id="srch-keywords"><div class="loading">Load data to begin</div></div>
       </div>
     </div>
@@ -187,12 +190,18 @@
 
   <!-- VIDEO / YOUTUBE -->
   <section class="panel" id="panel-video">
-    <div class="note">Video campaigns are brand-awareness format — expect very low or zero direct conversions. Lead with view rate and CPV, not ROAS. True view counts and CPV come from Google's TrueView metrics (account-level), not per-video — no per-video view count exists anywhere in Ads reporting, a genuine Google API limitation.</div>
+    <div class="note">Video campaigns are brand-awareness format — expect very low or zero direct conversions. Lead with view rate, CPV and completion, not ROAS.</div>
     <div class="cards" id="vid-cards"></div>
 
     <div class="section">
       <h2>Daily views &amp; spend trend</h2>
       <div class="chart-wrap"><canvas id="vid-trend-chart"></canvas></div>
+    </div>
+
+    <div class="section">
+      <h2>Completion funnel</h2>
+      <div class="desc">Average % of viewers still watching at each quartile of the video.</div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="vid-funnel-chart"></canvas></div>
     </div>
 
     <div class="two-col">
@@ -210,9 +219,27 @@
     </div>
 
     <div class="section">
-      <h2>Top cities</h2>
-      <div class="desc">Where video impressions and spend are concentrated.</div>
-      <div id="vid-geo-table"><div class="loading">Load data to begin</div></div>
+      <h2>Top placements <button class="btn-ghost" id="vid-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
+      <div class="desc">The actual YouTube channels, videos and sites your ads appeared on, ranked by spend.</div>
+      <div id="vid-placements-table"><div class="loading">Load data to begin</div></div>
+    </div>
+
+    <div class="section">
+      <h2>Top audiences</h2>
+      <div class="desc">Resolved against Google's standard Affinity/In-Market categories and your own custom/remarketing segments. Anything neither table recognises shows as a raw criterion ID.</div>
+      <div id="vid-audience-table"><div class="loading">Load data to begin</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="section">
+        <h2>Top cities</h2>
+        <div class="desc">Where video impressions and spend are concentrated.</div>
+        <div id="vid-geo-table"><div class="loading">Load data to begin</div></div>
+      </div>
+      <div class="section">
+        <h2>By hour of day</h2>
+        <div class="chart-wrap" style="height:260px;"><canvas id="vid-hour-chart"></canvas></div>
+      </div>
     </div>
 
     <div class="two-col">
@@ -221,7 +248,7 @@
         <div id="vid-campaigns"><div class="loading">Load data to begin</div></div>
       </div>
       <div class="section">
-        <h2>Videos — spend, CTR &amp; duration</h2>
+        <h2>Videos — real views, view rate &amp; completion</h2>
         <div id="vid-videos"><div class="loading">Load data to begin</div></div>
       </div>
     </div>
@@ -231,7 +258,7 @@
   <section class="panel" id="panel-demandgen">
     <div class="cards" id="dg-cards"></div>
     <div class="section">
-      <h2>Campaigns</h2>
+      <h2>Campaigns <button class="btn-ghost" id="dg-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
       <div id="dg-campaigns"><div class="loading">Load data to begin</div></div>
     </div>
     <div class="section">
@@ -281,6 +308,10 @@
     <div class="section">
       <h2>By gender</h2>
       <div id="gender-table"><div class="loading">Load data to begin</div></div>
+    </div>
+    <div class="section">
+      <h2>By parental status</h2>
+      <div id="parental-table"><div class="loading">Load data to begin</div></div>
     </div>
   </section>
 
@@ -333,7 +364,9 @@ window.addEventListener('load', () => {
 /* ============================================================
    BIGQUERY QUERY RUNNER
    ============================================================ */
-async function runQuery(sql){
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+async function runQuery(sql, attempt = 1){
   if (!accessToken) throw new Error('Not signed in yet.');
   const res = await fetch(`https://bigquery.googleapis.com/bigquery/v2/projects/${CONFIG.PROJECT_ID}/queries`, {
     method: 'POST',
@@ -345,6 +378,18 @@ async function runQuery(sql){
     document.getElementById('signedStatus').textContent = 'Session expired';
     document.getElementById('signInBtn').textContent = 'Re-authorise';
     throw new Error('AUTH_EXPIRED');
+  }
+  // BigQuery rate limits (quota/backend errors) come back as 403/500 with a specific
+  // reason — worth a short backoff-and-retry rather than failing the whole tab outright.
+  if ((res.status === 403 || res.status === 500 || res.status === 503) && attempt <= 3) {
+    const errBody = await res.json().catch(() => null);
+    const reason = errBody?.error?.errors?.[0]?.reason || '';
+    if (['rateLimitExceeded', 'quotaExceeded', 'backendError', 'internalError'].includes(reason) || res.status >= 500) {
+      const wait = 1500 * attempt;
+      console.warn(`BigQuery ${reason || res.status} — retrying in ${wait}ms (attempt ${attempt}/3)`);
+      await sleep(wait);
+      return runQuery(sql, attempt + 1);
+    }
   }
   const data = await res.json();
   if (data.error) throw new Error(data.error.message || 'BigQuery error');
@@ -522,6 +567,31 @@ function spin(ids){
 /* ============================================================
    OVERVIEW
    ============================================================ */
+function overviewTotals(rows){
+  return rows.reduce((acc, r) => {
+    acc.impressions += num(r.impressions); acc.clicks += num(r.clicks);
+    acc.spend += num(r.spend); acc.conversions += num(r.conversions);
+    acc.conv_value += num(r.conv_value);
+    return acc;
+  }, {impressions:0, clicks:0, spend:0, conversions:0, conv_value:0});
+}
+const shiftDate = (dateStr, days) => {
+  const d = new Date(dateStr); d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0,10);
+};
+function pctDelta(cur, prev){
+  if (!prev) return null;
+  const d = ((cur - prev) / prev) * 100;
+  return isFinite(d) ? d : null;
+}
+function deltaTag(cur, prev){
+  const d = pctDelta(cur, prev);
+  if (d === null) return '';
+  const cls = d > 0.5 ? 'up' : d < -0.5 ? 'down' : 'flat';
+  const sign = d > 0 ? '+' : '';
+  return `<div class="delta ${cls}">${sign}${d.toFixed(1)}% YoY</div>`;
+}
+
 async function loadOverview(start, end){
   spin(['ov-cards', 'ov-table']);
   const sql = `
@@ -538,30 +608,52 @@ async function loadOverview(start, end){
     ORDER BY spend DESC
   `;
   const rows = await runQuery(sql);
-  renderOverviewCards(rows);
+
+  let yoyTotals = null;
+  if (document.getElementById('yoyToggle').checked) {
+    try {
+      const pyStart = shiftDate(start, -365), pyEnd = shiftDate(end, -365);
+      const pySql = `
+        SELECT
+          SUM(s.metrics_impressions) AS impressions,
+          SUM(s.metrics_clicks) AS clicks,
+          ROUND(SUM(s.metrics_cost_micros)/1000000, 2) AS spend,
+          ROUND(SUM(s.metrics_conversions), 1) AS conversions,
+          ROUND(SUM(s.metrics_conversions_value), 2) AS conv_value
+        ${campaignBase()}
+        WHERE s.segments_date BETWEEN '${pyStart}' AND '${pyEnd}'
+      `;
+      const pyRows = await runQuery(pySql);
+      yoyTotals = pyRows.length ? overviewTotals(pyRows) : null;
+    } catch(e) { console.warn('YoY comparison query failed:', e.message); }
+  }
+
+  renderOverviewCards(rows, yoyTotals);
   renderOverviewTable(rows);
   await renderOverviewChart(start, end);
 }
 
-function renderOverviewCards(rows){
-  const totals = rows.reduce((acc, r) => {
-    acc.impressions += num(r.impressions); acc.clicks += num(r.clicks);
-    acc.spend += num(r.spend); acc.conversions += num(r.conversions);
-    acc.conv_value += num(r.conv_value);
-    return acc;
-  }, {impressions:0, clicks:0, spend:0, conversions:0, conv_value:0});
+function renderOverviewCards(rows, yoyTotals){
+  const totals = overviewTotals(rows);
   const cvr = safeDiv(totals.conversions, totals.clicks);
   const cpa = safeDiv(totals.spend, totals.conversions);
   const roas = safeDiv(totals.conv_value, totals.spend);
-  document.getElementById('ov-cards').innerHTML = [
-    ['Impressions', fmtInt(totals.impressions)],
-    ['Clicks', fmtInt(totals.clicks)],
-    ['Spend', fmtGBP(totals.spend)],
-    ['Conversions', fmtInt(totals.conversions)],
-    ['CVR', fmtPct(cvr)],
-    ['CPA', fmtGBP(cpa)],
-    ['ROAS', roas.toFixed(2) + 'x']
-  ].map(([label,val]) => `<div class="card"><div class="label">${label}</div><div class="value">${val}</div></div>`).join('');
+  const pyCvr = yoyTotals ? safeDiv(yoyTotals.conversions, yoyTotals.clicks) : null;
+  const pyCpa = yoyTotals ? safeDiv(yoyTotals.spend, yoyTotals.conversions) : null;
+  const pyRoas = yoyTotals ? safeDiv(yoyTotals.conv_value, yoyTotals.spend) : null;
+
+  const metrics = [
+    ['Impressions', fmtInt(totals.impressions), totals.impressions, yoyTotals?.impressions],
+    ['Clicks', fmtInt(totals.clicks), totals.clicks, yoyTotals?.clicks],
+    ['Spend', fmtGBP(totals.spend), totals.spend, yoyTotals?.spend],
+    ['Conversions', fmtInt(totals.conversions), totals.conversions, yoyTotals?.conversions],
+    ['CVR', fmtPct(cvr), cvr, pyCvr],
+    ['CPA', fmtGBP(cpa), cpa, pyCpa],
+    ['ROAS', roas.toFixed(2) + 'x', roas, pyRoas]
+  ];
+  document.getElementById('ov-cards').innerHTML = metrics.map(([label,val,cur,prev]) =>
+    `<div class="card"><div class="label">${label}</div><div class="value">${val}</div>${yoyTotals ? deltaTag(cur, prev) : ''}</div>`
+  ).join('');
 }
 
 function badgeFor(channel){
@@ -639,6 +731,7 @@ async function loadPMax(start, end){
     GROUP BY 1,2 ORDER BY spend DESC
   `;
   const rows = await runQuery(sql);
+  pmaxRowsCache = rows;
   const totals = rows.reduce((a,r)=>({spend:a.spend+num(r.spend), conv:a.conv+num(r.conversions), convVal:a.convVal+num(r.conv_value), clicks:a.clicks+num(r.clicks)}), {spend:0,conv:0,convVal:0,clicks:0});
   document.getElementById('pmax-cards').innerHTML = [
     ['Spend', fmtGBP(totals.spend)], ['Conversions', fmtInt(totals.conv)],
@@ -741,6 +834,7 @@ async function loadShopping(start, end){
     `;
     try { prodRows = await runQuery(fallbackSql); } catch(e2) { prodRows = []; }
   }
+  shopProductsCache = prodRows;
   document.getElementById('shop-products').innerHTML = prodRows.length ? `<table>
     <tr><th>${titledOk ? 'Product' : 'Item ID'}</th><th>Brand</th><th>${titledOk ? 'Product type' : 'Category'}</th>${titledOk ? '<th>Price</th>' : ''}<th>Impressions</th><th>Spend</th><th>Conversions</th>${titledOk ? '<th>ROAS</th>' : ''}</tr>
     ${prodRows.map(r=>{
@@ -794,6 +888,7 @@ async function loadSearch(start, end){
       GROUP BY 1,2 ORDER BY spend DESC LIMIT 25
     `;
     const kwRows = await runQuery(kwSql);
+    srchKeywordsCache = kwRows;
     document.getElementById('srch-keywords').innerHTML = kwRows.length ? `<table>
       <tr><th>Keyword</th><th>Match type</th><th>Clicks</th><th>Spend</th><th>Conversions</th></tr>
       ${kwRows.map(r=>`<tr><td>${r.keyword}</td><td>${r.match_type||''}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
@@ -853,7 +948,7 @@ document.getElementById('panel-searchterms').addEventListener('click', (e) => {
    VIDEO / YOUTUBE
    ============================================================ */
 async function loadVideo(start, end){
-  spin(['vid-cards', 'vid-campaigns', 'vid-videos', 'vid-geo-table']);
+  spin(['vid-cards', 'vid-campaigns', 'vid-videos', 'vid-geo-table', 'vid-placements-table', 'vid-audience-table']);
 
   const sql = `
     SELECT c.campaign_id, c.campaign_name,
@@ -868,27 +963,78 @@ async function loadVideo(start, end){
   const rows = await runQuery(sql);
   const totals = rows.reduce((a,r)=>({spend:a.spend+num(r.spend), impr:a.impr+num(r.impressions)}), {spend:0,impr:0});
 
-  // True view counts & CPV live on GeoStats (metrics_video_trueview_views / cost), not on VideoBasicStats.
-  let viewTotals = {views:0, cpv:0};
+  // True view counts, CPV & cross-device conversions live on GeoStats, not VideoBasicStats.
+  let viewTotals = {views:0, cpv:0, crossDevice:0};
   try {
     const vidSql = `
       SELECT SUM(g.metrics_video_trueview_views) AS views,
-        ROUND(SUM(g.metrics_cost_micros)/1000000,2) AS spend
+        ROUND(SUM(g.metrics_cost_micros)/1000000,2) AS spend,
+        ROUND(SUM(g.metrics_cross_device_conversions),1) AS cross_device
       FROM ${T('GeoStats')} g
       JOIN ${T('Campaign')} c ON g.campaign_id = c.campaign_id
       WHERE c.campaign_advertising_channel_type = 'VIDEO'
         AND g.segments_date BETWEEN '${start}' AND '${end}'
     `;
     const vr = await runQuery(vidSql);
-    if (vr.length) viewTotals = { views: num(vr[0].views), cpv: safeDiv(num(vr[0].spend), num(vr[0].views)) };
+    if (vr.length) viewTotals = { views: num(vr[0].views), cpv: safeDiv(num(vr[0].spend), num(vr[0].views)), crossDevice: num(vr[0].cross_device) };
   } catch(e) { console.warn('Video view totals query failed:', e.message); }
+
+  // Viewability — what % of impressions were actually seen on screen. Lives on
+  // CampaignStats (not CampaignBasicStats, which we use everywhere else).
+  let viewability = null;
+  try {
+    const viewabSql = `
+      SELECT SUM(s.metrics_active_view_impressions) AS viewable,
+        SUM(s.metrics_active_view_measurable_impressions) AS measurable,
+        SUM(s.metrics_impressions) AS impressions
+      FROM ${T('CampaignStats')} s
+      JOIN ${T('Campaign')} c ON s.campaign_id = c.campaign_id
+      WHERE c.campaign_advertising_channel_type = 'VIDEO'
+        AND s.segments_date BETWEEN '${start}' AND '${end}'
+    `;
+    const vw = await runQuery(viewabSql);
+    if (vw.length && num(vw[0].measurable) > 0) {
+      viewability = {
+        viewablePct: safeDiv(num(vw[0].viewable), num(vw[0].measurable)),
+        measurablePct: safeDiv(num(vw[0].measurable), num(vw[0].impressions))
+      };
+    }
+  } catch(e) { console.warn('Video viewability query failed:', e.message); }
 
   const viewRate = safeDiv(viewTotals.views, totals.impr);
   document.getElementById('vid-cards').innerHTML = [
     ['Spend', fmtGBP(totals.spend)], ['Impressions', fmtInt(totals.impr)],
     ['Views', fmtInt(viewTotals.views)], ['CPV', viewTotals.views ? '£'+viewTotals.cpv.toFixed(3) : '—'],
-    ['View rate', viewTotals.views ? fmtPct(viewRate) : '—']
+    ['View rate', viewTotals.views ? fmtPct(viewRate) : '—'],
+    ['Cross-device conv.', fmtInt(viewTotals.crossDevice)],
+    ['Viewability', viewability ? fmtPct(viewability.viewablePct) : '—'],
+    ['Measurability', viewability ? fmtPct(viewability.measurablePct) : '—']
   ].map(([l,v]) => `<div class="card"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('');
+
+  /* ---- Completion funnel ---- */
+  try {
+    const funnelSql = `
+      SELECT
+        AVG(metrics_video_quartile_p25_rate) AS q25,
+        AVG(metrics_video_quartile_p50_rate) AS q50,
+        AVG(metrics_video_quartile_p75_rate) AS q75,
+        AVG(metrics_video_quartile_p100_rate) AS q100
+      FROM ${T('VideoNonClickStats')}
+      WHERE segments_date BETWEEN '${start}' AND '${end}'
+    `;
+    const fr = await runQuery(funnelSql);
+    const funnel = fr.length ? fr[0] : {};
+    if (window.chartInstances['vid-funnel-chart']) window.chartInstances['vid-funnel-chart'].destroy();
+    window.chartInstances['vid-funnel-chart'] = new Chart(document.getElementById('vid-funnel-chart'), {
+      type: 'bar',
+      data: {
+        labels: ['25% watched', '50% watched', '75% watched', '100% watched'],
+        datasets: [{ label: '% of viewers', data: [funnel.q25, funnel.q50, funnel.q75, funnel.q100].map(v => num(v) * 100), backgroundColor: '#9d174d' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { y: { max: 100, title: { display: true, text: '% of viewers' } } } }
+    });
+  } catch(e) { console.warn('Video completion funnel failed:', e.message); }
 
   document.getElementById('vid-campaigns').innerHTML = rows.length ? `<table>
     <tr><th>Campaign</th><th>Impressions</th><th>Spend</th></tr>
@@ -1008,20 +1154,118 @@ async function loadVideo(start, end){
     document.getElementById('vid-geo-table').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
   }
 
-  /* ---- Videos: spend, CTR & duration ----
-     No per-video view count exists anywhere in Ads reporting (a genuine Google API
-     limitation) — so this ranks by spend, with real titles, duration, CTR and CPC. */
+  /* ---- Top placements: real YouTube channels/videos/sites your ads ran on ---- */
+  try {
+    const placeSql = `
+      SELECT p.ad_group_criterion_placement_url AS placement,
+        SUM(ps.metrics_impressions) AS impressions,
+        SUM(ps.metrics_clicks) AS clicks,
+        ROUND(SUM(ps.metrics_cost_micros)/1000000,2) AS spend,
+        ROUND(SUM(ps.metrics_conversions),1) AS conversions
+      FROM ${T('PlacementStats')} ps
+      JOIN ${T('Placement')} p
+        ON ps.ad_group_criterion_criterion_id = p.ad_group_criterion_criterion_id
+        AND ps.ad_group_id = p.ad_group_id
+      JOIN ${T('Campaign')} c ON ps.campaign_id = c.campaign_id
+      WHERE c.campaign_advertising_channel_type = 'VIDEO'
+        AND ps.segments_date BETWEEN '${start}' AND '${end}'
+      GROUP BY 1 ORDER BY spend DESC LIMIT 25
+    `;
+    const placeRows = await runQuery(placeSql);
+    vidPlacementsCache = placeRows;
+    document.getElementById('vid-placements-table').innerHTML = placeRows.length ? `<table>
+      <tr><th>Placement</th><th>Impressions</th><th>Clicks</th><th>Spend</th><th>Conversions</th></tr>
+      ${placeRows.map(r=>`<tr><td><a href="${r.placement}" target="_blank" rel="noopener" style="color:var(--ink);">${r.placement}</a></td><td>${fmtInt(r.impressions)}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+    </table>` : '<div class="empty">No placement-level data for this range.</div>';
+  } catch(e) {
+    document.getElementById('vid-placements-table').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
+  }
+
+  /* ---- Top audiences: resolved against Google's standard verticals + your own custom segments ---- */
+  try {
+    const audSql = `
+      SELECT
+        COALESCE(v.Category, aud.audience_name, CONCAT('Unresolved criterion ', CAST(s.ad_group_criterion_criterion_id AS STRING))) AS audience,
+        CASE WHEN v.Category IS NOT NULL THEN 'Standard' WHEN aud.audience_name IS NOT NULL THEN 'Custom' ELSE 'Unresolved' END AS source,
+        SUM(s.metrics_impressions) AS impressions,
+        ROUND(SUM(s.metrics_cost_micros)/1000000,2) AS spend,
+        ROUND(SUM(s.metrics_conversions),1) AS conversions
+      FROM ${T('AdGroupAudienceStats')} s
+      JOIN ${T('Campaign')} c
+        ON CAST(REGEXP_EXTRACT(CAST(s.ad_group_campaign AS STRING), r'(\\d+)$') AS INT64) = c.campaign_id
+      LEFT JOIN \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.audience_verticals\` v
+        ON s.ad_group_criterion_criterion_id = v.\`Criterion ID\`
+      LEFT JOIN ${T('Audience')} aud
+        ON s.ad_group_criterion_criterion_id = aud.audience_id
+      WHERE c.campaign_advertising_channel_type = 'VIDEO'
+        AND s.segments_date BETWEEN '${start}' AND '${end}'
+      GROUP BY 1,2 ORDER BY spend DESC LIMIT 25
+    `;
+    const audRows = await runQuery(audSql);
+    document.getElementById('vid-audience-table').innerHTML = audRows.length ? `<table>
+      <tr><th>Audience</th><th>Type</th><th>Impressions</th><th>Spend</th><th>Conversions</th></tr>
+      ${audRows.map(r=>`<tr><td>${r.audience}</td><td>${r.source}</td><td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+    </table>` : '<div class="empty">No audience-level data for this range.</div>';
+  } catch(e) {
+    console.warn('Audience query failed (has audience_verticals been loaded yet?):', e.message);
+    document.getElementById('vid-audience-table').innerHTML = `<div class="empty">Query error — likely means the audience_verticals table hasn't been loaded yet. ${e.message}</div>`;
+  }
+
+  /* ---- By hour of day ---- */
+  try {
+    const hourSql = `
+      SELECT h.segments_hour AS hour,
+        ROUND(SUM(h.metrics_cost_micros)/1000000,2) AS spend,
+        SUM(h.metrics_impressions) AS impressions
+      FROM ${T('HourlyCampaignStats')} h
+      JOIN ${T('Campaign')} c ON h.campaign_id = c.campaign_id
+      WHERE c.campaign_advertising_channel_type = 'VIDEO'
+        AND h.segments_date BETWEEN '${start}' AND '${end}'
+      GROUP BY 1 ORDER BY CAST(h.hour AS INT64)
+    `;
+    const hourRows = await runQuery(hourSql);
+    if (window.chartInstances['vid-hour-chart']) window.chartInstances['vid-hour-chart'].destroy();
+    window.chartInstances['vid-hour-chart'] = new Chart(document.getElementById('vid-hour-chart'), {
+      type: 'bar',
+      data: { labels: hourRows.map(r=>`${r.hour}:00`), datasets: [{ label:'Spend (£)', data: hourRows.map(r=>num(r.spend)), backgroundColor:'#9d174d' }] },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} } }
+    });
+  } catch(e) { console.warn('Video hour-of-day chart failed:', e.message); }
+
+  /* ---- Videos: real per-video views, view rate, CPV & quartile completion ----
+     VideoNonClickStats carries genuine per-video view/quartile data that VideoBasicStats
+     doesn't — combining both plus thumbnails (video_id values are real YouTube IDs). */
   try {
     const vTopSql = `
+      WITH clicks_data AS (
+        SELECT video_id,
+          SUM(metrics_impressions) AS impressions,
+          SUM(metrics_clicks) AS clicks,
+          ROUND(SUM(metrics_cost_micros)/1000000,2) AS spend
+        FROM ${T('VideoBasicStats')}
+        WHERE segments_date BETWEEN '${start}' AND '${end}'
+        GROUP BY 1
+      ),
+      view_data AS (
+        SELECT video_id,
+          SUM(metrics_video_trueview_views) AS views,
+          AVG(metrics_video_trueview_view_rate) AS view_rate,
+          AVG(metrics_trueview_average_cpv) AS avg_cpv,
+          AVG(metrics_video_quartile_p25_rate) AS q25,
+          AVG(metrics_video_quartile_p50_rate) AS q50,
+          AVG(metrics_video_quartile_p75_rate) AS q75,
+          AVG(metrics_video_quartile_p100_rate) AS q100
+        FROM ${T('VideoNonClickStats')}
+        WHERE segments_date BETWEEN '${start}' AND '${end}'
+        GROUP BY 1
+      )
       SELECT v.video_title AS title, v.video_id, v.video_duration_millis AS duration_ms,
-        vs.ad_group_ad_status AS status,
-        SUM(vs.metrics_impressions) AS impressions,
-        SUM(vs.metrics_clicks) AS clicks,
-        ROUND(SUM(vs.metrics_cost_micros)/1000000,2) AS spend
-      FROM ${T('VideoBasicStats')} vs
-      LEFT JOIN ${T('Video')} v ON vs.video_id = v.video_id
-      WHERE vs.segments_date BETWEEN '${start}' AND '${end}'
-      GROUP BY 1,2,3,4 ORDER BY spend DESC LIMIT 20
+        c.impressions, c.clicks, c.spend,
+        vd.views, vd.view_rate, vd.avg_cpv, vd.q100
+      FROM clicks_data c
+      FULL OUTER JOIN view_data vd ON c.video_id = vd.video_id
+      LEFT JOIN ${T('Video')} v ON COALESCE(c.video_id, vd.video_id) = v.video_id
+      ORDER BY c.spend DESC LIMIT 20
     `;
     const vTop = await runQuery(vTopSql);
     const fmtDuration = (ms) => {
@@ -1031,10 +1275,13 @@ async function loadVideo(start, end){
       return `${m}:${String(s).padStart(2,'0')}`;
     };
     document.getElementById('vid-videos').innerHTML = vTop.length ? `<table>
-      <tr><th>Video</th><th>Duration</th><th>Status</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>Spend</th><th>CPC</th></tr>
-      ${vTop.map(r=>`<tr><td>${r.title||r.video_id}</td><td>${fmtDuration(r.duration_ms)}</td><td>${r.status||'—'}</td>
-        <td>${fmtInt(r.impressions)}</td><td>${fmtInt(r.clicks)}</td><td>${fmtPct(safeDiv(r.clicks,r.impressions))}</td>
-        <td>${fmtGBP(r.spend)}</td><td>${fmtGBP(safeDiv(r.spend,r.clicks))}</td></tr>`).join('')}
+      <tr><th>Video</th><th>Duration</th><th>Impressions</th><th>Views</th><th>View rate</th><th>CPV</th><th>Completion</th><th>Spend</th></tr>
+      ${vTop.map(r=>{
+        const thumb = r.video_id ? `<img src="https://img.youtube.com/vi/${r.video_id}/default.jpg" style="width:64px;height:36px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:8px;">` : '';
+        return `<tr><td>${thumb}${r.title||r.video_id||'—'}</td><td>${fmtDuration(r.duration_ms)}</td>
+        <td>${fmtInt(r.impressions)}</td><td>${r.views ? fmtInt(r.views) : '—'}</td><td>${r.view_rate ? fmtPct(r.view_rate) : '—'}</td>
+        <td>${r.avg_cpv ? '£'+num(r.avg_cpv).toFixed(3) : '—'}</td><td>${r.q100 ? fmtPct(r.q100) : '—'}</td><td>${fmtGBP(r.spend)}</td></tr>`;
+      }).join('')}
     </table>` : '<div class="empty">No video-level data.</div>';
   } catch(e) {
     document.getElementById('vid-videos').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
@@ -1057,6 +1304,7 @@ async function loadDemandGen(start, end){
     GROUP BY 1,2,3 ORDER BY date
   `;
   const rows = await runQuery(sql);
+  dgRowsCache = rows;
   const totals = rows.reduce((a,r)=>({spend:a.spend+num(r.spend), clicks:a.clicks+num(r.clicks), conv:a.conv+num(r.conversions), impr:a.impr+num(r.impressions)}), {spend:0,clicks:0,conv:0,impr:0});
   document.getElementById('dg-cards').innerHTML = [
     ['Impressions', fmtInt(totals.impr)], ['Clicks', fmtInt(totals.clicks)],
@@ -1134,6 +1382,11 @@ async function loadRegions(start, end){
    ============================================================ */
 let cityRowsCache = [];
 let regRowsCache = [];
+let pmaxRowsCache = [];
+let shopProductsCache = [];
+let srchKeywordsCache = [];
+let vidPlacementsCache = [];
+let dgRowsCache = [];
 async function loadCities(start, end){
   spin(['city-table']);
   const sql = `
@@ -1173,7 +1426,7 @@ document.getElementById('city-filter').addEventListener('input', (e) => {
    ============================================================ */
 let devChartInstance = null;
 async function loadDeviceDemo(start, end){
-  spin(['dev-table', 'age-table', 'gender-table']);
+  spin(['dev-table', 'age-table', 'gender-table', 'parental-table']);
   const devSql = `
     SELECT segments_device AS device,
       SUM(metrics_impressions) AS impressions, SUM(metrics_clicks) AS clicks,
@@ -1238,6 +1491,28 @@ async function loadDeviceDemo(start, end){
   } catch(e) {
     document.getElementById('gender-table').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
   }
+
+  try {
+    const parSql = `
+      SELECT p.ad_group_criterion_parental_status_type AS status,
+        SUM(ps.metrics_impressions) AS impressions,
+        ROUND(SUM(ps.metrics_cost_micros)/1000000,2) AS spend,
+        ROUND(SUM(ps.metrics_conversions),1) AS conversions
+      FROM ${T('ParentalStatusStats')} ps
+      JOIN ${T('ParentalStatus')} p
+        ON ps.ad_group_criterion_criterion_id = p.ad_group_criterion_criterion_id
+        AND ps.ad_group_id = p.ad_group_id
+      WHERE ps.segments_date BETWEEN '${start}' AND '${end}'
+      GROUP BY 1 ORDER BY spend DESC
+    `;
+    const parRows = await runQuery(parSql);
+    document.getElementById('parental-table').innerHTML = parRows.length ? `<table>
+      <tr><th>Parental status</th><th>Impressions</th><th>Spend</th><th>Conversions</th></tr>
+      ${parRows.map(r=>`<tr><td>${r.status}</td><td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+    </table>` : '<div class="empty">No parental status data.</div>';
+  } catch(e) {
+    document.getElementById('parental-table').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
+  }
 }
 
 /* ============================================================
@@ -1262,6 +1537,66 @@ document.getElementById('city-export').addEventListener('click', () => {
   downloadCSV('cities.csv',
     ['City','Impressions','Clicks','Spend','Conversions'],
     cityRowsCache.map(r => [r.name, r.impressions, r.clicks, r.spend, r.conversions]));
+});
+document.getElementById('pmax-export').addEventListener('click', () => {
+  downloadCSV('pmax_campaigns.csv',
+    ['Campaign','Spend','Conversions','Conv value'],
+    pmaxRowsCache.map(r => [r.campaign_name, r.spend, r.conversions, r.conv_value]));
+});
+document.getElementById('shop-export').addEventListener('click', () => {
+  downloadCSV('shopping_products.csv',
+    ['Item ID','Title','Brand','Product type','Price','Impressions','Spend','Conversions'],
+    shopProductsCache.map(r => [r.item_id, r.title || '', r.brand, r.product_type || r.category, r.price || '', r.impressions, r.spend, r.conversions]));
+});
+document.getElementById('srch-export').addEventListener('click', () => {
+  downloadCSV('search_keywords.csv',
+    ['Keyword','Match type','Clicks','Spend','Conversions'],
+    srchKeywordsCache.map(r => [r.keyword, r.match_type || '', r.clicks, r.spend, r.conversions]));
+});
+document.getElementById('vid-export').addEventListener('click', () => {
+  downloadCSV('video_placements.csv',
+    ['Placement','Impressions','Clicks','Spend','Conversions'],
+    vidPlacementsCache.map(r => [r.placement, r.impressions, r.clicks, r.spend, r.conversions]));
+});
+document.getElementById('dg-export').addEventListener('click', () => {
+  downloadCSV('demand_gen_campaigns.csv',
+    ['Date','Campaign','Impressions','Clicks','Spend','Conversions'],
+    dgRowsCache.map(r => [r.date, r.campaign_name, r.impressions, r.clicks, r.spend, r.conversions]));
+});
+
+/* ============================================================
+   CLICK-TO-SORT — works on every rendered table, no per-table
+   wiring needed. Click a header to sort by that column; click
+   again to reverse. Detects numbers (incl. £, %, commas) vs text.
+   ============================================================ */
+function parseCell(text){
+  const clean = text.replace(/[£,%x]/g, '').trim();
+  const n = parseFloat(clean);
+  return isNaN(n) ? text.toLowerCase() : n;
+}
+document.querySelector('main').addEventListener('click', (e) => {
+  const th = e.target.closest('th');
+  if (!th) return;
+  const table = th.closest('table');
+  if (!table) return;
+  const headerRow = table.rows[0];
+  const colIndex = Array.from(headerRow.cells).indexOf(th);
+  if (colIndex === -1) return;
+
+  const ascending = th.dataset.sortDir !== 'asc';
+  Array.from(headerRow.cells).forEach(c => { c.dataset.sortDir = ''; c.textContent = c.textContent.replace(/ [▲▼]$/, ''); });
+  th.dataset.sortDir = ascending ? 'asc' : 'desc';
+  th.textContent = th.textContent + (ascending ? ' ▲' : ' ▼');
+
+  const tbody = table.tBodies[0] || table;
+  const dataRows = Array.from(tbody.rows).filter(r => r !== headerRow);
+  dataRows.sort((a, b) => {
+    const av = parseCell(a.cells[colIndex]?.textContent || '');
+    const bv = parseCell(b.cells[colIndex]?.textContent || '');
+    if (typeof av === 'number' && typeof bv === 'number') return ascending ? av - bv : bv - av;
+    return ascending ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
+  });
+  dataRows.forEach(r => tbody.appendChild(r));
 });
 </script>
 </body>
