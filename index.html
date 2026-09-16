@@ -115,12 +115,29 @@
       <h2>Daily spend trend by channel</h2>
       <div class="chart-wrap"><canvas id="ov-chart"></canvas></div>
     </div>
+    <div class="section">
+      <h2>Budget pacing <button class="btn-ghost" id="budget-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
+      <div class="desc">Average daily spend vs daily budget cap. "Likely capped" means a campaign is regularly spending at or near its budget ceiling — a sign it could spend more if the budget allowed.</div>
+      <div id="budget-table"><div class="loading">Sign in and load data to begin</div></div>
+    </div>
   </section>
 
   <!-- PMAX -->
   <section class="panel" id="panel-pmax">
     <div class="note">Performance Max intentionally limits reporting depth — Google does not expose keyword, audience, or full geo/device breakdowns for PMax. This tab shows what's actually available: campaign performance and asset group / listing group performance.</div>
+    <div class="section" style="padding-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <label for="pmaxCampaignFilter" style="font-size:13px;font-weight:600;color:var(--muted);">Campaign:</label>
+        <select id="pmaxCampaignFilter" style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;min-width:260px;">
+          <option value="all">All campaigns</option>
+        </select>
+      </div>
+    </div>
     <div class="cards" id="pmax-cards"></div>
+    <div class="two-col" id="pmax-top-bottom-wrap">
+      <div class="section" id="pmax-top-card"></div>
+      <div class="section" id="pmax-bottom-card"></div>
+    </div>
     <div class="section">
       <h2>Daily spend &amp; conversions trend</h2>
       <div class="chart-wrap" style="height:220px;"><canvas id="pmax-chart"></canvas></div>
@@ -139,7 +156,19 @@
 
   <!-- SHOPPING -->
   <section class="panel" id="panel-shopping">
+    <div class="section" style="padding-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <label for="shopCampaignFilter" style="font-size:13px;font-weight:600;color:var(--muted);">Campaign:</label>
+        <select id="shopCampaignFilter" style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;min-width:260px;">
+          <option value="all">All campaigns</option>
+        </select>
+      </div>
+    </div>
     <div class="cards" id="shop-cards"></div>
+    <div class="two-col" id="shop-top-bottom-wrap">
+      <div class="section" id="shop-top-card"></div>
+      <div class="section" id="shop-bottom-card"></div>
+    </div>
     <div class="section">
       <h2>Daily spend &amp; conversions trend</h2>
       <div class="chart-wrap" style="height:220px;"><canvas id="shop-chart"></canvas></div>
@@ -150,14 +179,38 @@
     </div>
     <div class="section">
       <h2>Top products by spend <button class="btn-ghost" id="shop-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
-      <div class="desc">Titles resolved via GA4 item data where possible — see note below the table if that join doesn't apply.</div>
+      <div class="desc">Titles resolved via your product feed where possible — see note below the table if that join doesn't apply.</div>
       <div id="shop-products"><div class="loading">Load data to begin</div></div>
     </div>
   </section>
 
   <!-- SEARCH -->
   <section class="panel" id="panel-search">
+    <div class="section" style="padding-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <label for="srchCampaignFilter" style="font-size:13px;font-weight:600;color:var(--muted);">Campaign:</label>
+        <select id="srchCampaignFilter" style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;min-width:260px;">
+          <option value="all">All campaigns</option>
+        </select>
+      </div>
+    </div>
     <div class="cards" id="srch-cards"></div>
+
+    <div class="two-col" id="srch-ad-top-bottom-wrap">
+      <div class="section" id="srch-ad-top-card"></div>
+      <div class="section" id="srch-ad-bottom-card"></div>
+    </div>
+
+    <div class="section">
+      <h2>Ad copy performance <button class="btn-ghost" id="srch-ads-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
+      <div class="desc">Every Responsive Search Ad, with its actual headlines, Google's Ad Strength rating, and real performance — not just campaign or keyword level.</div>
+      <div id="srch-ads-table"><div class="loading">Load data to begin</div></div>
+    </div>
+
+    <div class="two-col" id="srch-top-bottom-wrap">
+      <div class="section" id="srch-top-card"></div>
+      <div class="section" id="srch-bottom-card"></div>
+    </div>
     <div class="section">
       <h2>Daily spend &amp; conversions trend</h2>
       <div class="chart-wrap" style="height:220px;"><canvas id="srch-chart"></canvas></div>
@@ -191,7 +244,28 @@
   <!-- VIDEO / YOUTUBE -->
   <section class="panel" id="panel-video">
     <div class="note">Video campaigns are brand-awareness format — expect very low or zero direct conversions. Lead with view rate, CPV and completion, not ROAS.</div>
+
+    <div class="section" style="padding-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <label for="vidCampaignFilter" style="font-size:13px;font-weight:600;color:var(--muted);">Campaign:</label>
+        <select id="vidCampaignFilter" style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;min-width:260px;">
+          <option value="all">All video campaigns</option>
+        </select>
+      </div>
+    </div>
+
     <div class="cards" id="vid-cards"></div>
+
+    <div class="two-col" id="vid-top-bottom-wrap">
+      <div class="section" id="vid-top-ad-card"></div>
+      <div class="section" id="vid-bottom-ad-card"></div>
+    </div>
+
+    <div class="section">
+      <h2>Videos — by campaign &amp; ad group <button class="btn-ghost" id="vid-videos-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
+      <div class="desc">Every video, with the campaign and ad group it belongs to, ranked by spend.</div>
+      <div id="vid-videos"><div class="loading">Load data to begin</div></div>
+    </div>
 
     <div class="section">
       <h2>Daily views &amp; spend trend</h2>
@@ -218,18 +292,6 @@
       </div>
     </div>
 
-    <div class="section">
-      <h2>Top placements <button class="btn-ghost" id="vid-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
-      <div class="desc">Only shows explicitly managed placements — Google doesn't expose automatic/audience-targeted placements as named channels anywhere in Ads reporting.</div>
-      <div id="vid-placements-table"><div class="loading">Load data to begin</div></div>
-    </div>
-
-    <div class="section">
-      <h2>Top audiences</h2>
-      <div class="desc">Resolved against Google's standard Affinity/In-Market categories and your own custom/remarketing segments where possible. Video campaigns commonly use newer audience-expansion signals Google doesn't expose a name for anywhere — those show as raw criterion IDs, unbilled (£0), for manual cross-reference in the Ads UI if needed.</div>
-      <div id="vid-audience-table"><div class="loading">Load data to begin</div></div>
-    </div>
-
     <div class="two-col">
       <div class="section">
         <h2>Top cities</h2>
@@ -246,14 +308,32 @@
       <h2>Campaigns</h2>
       <div id="vid-campaigns"><div class="loading">Load data to begin</div></div>
     </div>
-    <div class="section">
-      <h2>Videos — real views, view rate &amp; completion</h2>
-      <div id="vid-videos"><div class="loading">Load data to begin</div></div>
-    </div>
+
+    <details class="section" style="padding:14px 20px;">
+      <summary style="cursor:pointer;font-weight:600;font-size:14px;color:var(--muted);">Data Google doesn't expose (placements &amp; audience signals) — click to view</summary>
+      <div style="margin-top:14px;">
+        <h2 style="font-size:13px;">Top placements <button class="btn-ghost" id="vid-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
+        <div class="desc">Only shows explicitly managed placements — Google doesn't expose automatic/audience-targeted placements as named channels anywhere in Ads reporting.</div>
+        <div id="vid-placements-table"><div class="loading">Load data to begin</div></div>
+      </div>
+      <div style="margin-top:20px;">
+        <h2 style="font-size:13px;">Top audiences</h2>
+        <div class="desc">Resolved against Google's standard Affinity/In-Market categories and your own custom/remarketing segments where possible. Video campaigns commonly use newer audience-expansion signals Google doesn't expose a name for anywhere — those show as raw criterion IDs, unbilled (£0), for manual cross-reference in the Ads UI if needed.</div>
+        <div id="vid-audience-table"><div class="loading">Load data to begin</div></div>
+      </div>
+    </details>
   </section>
 
   <!-- DEMAND GEN -->
   <section class="panel" id="panel-demandgen">
+    <div class="section" style="padding-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <label for="dgCampaignFilter" style="font-size:13px;font-weight:600;color:var(--muted);">Campaign:</label>
+        <select id="dgCampaignFilter" style="padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;min-width:260px;">
+          <option value="all">All campaigns</option>
+        </select>
+      </div>
+    </div>
     <div class="cards" id="dg-cards"></div>
     <div class="section">
       <h2>Campaigns <button class="btn-ghost" id="dg-export" style="color:var(--ink);border-color:var(--border);font-size:11px;padding:4px 10px;float:right;">Export CSV</button></h2>
@@ -562,6 +642,37 @@ function spin(ids){
   });
 }
 
+/* ---------- shared: campaign filter dropdowns ---------- */
+function populateCampaignFilter(selectId, rows){
+  const el = document.getElementById(selectId);
+  const prev = el.value;
+  el.innerHTML = '<option value="all">All campaigns</option>' +
+    rows.map(r => `<option value="${r.campaign_id}">${r.campaign_name}</option>`).join('');
+  if (rows.some(r => String(r.campaign_id) === prev)) el.value = prev;
+  return el.value;
+}
+function campFilterClause(selectId, alias){
+  const v = document.getElementById(selectId).value;
+  return v && v !== 'all' ? ` AND ${alias}.campaign_id = ${v}` : '';
+}
+
+/* ---------- shared: top/bottom performer call-out cards ---------- */
+function renderPerformerCard(containerId, label, item, color, titleText, subtitleText, fields){
+  const el = document.getElementById(containerId);
+  if (!item) { el.innerHTML = `<h2 style="color:${color};">${label}</h2><div class="empty">Not enough data for this range.</div>`; return; }
+  el.innerHTML = `
+    <h2 style="color:${color};">${label}</h2>
+    <div style="font-weight:600;font-size:14px;margin-bottom:6px;">${titleText}</div>
+    ${subtitleText ? `<div class="desc" style="margin-bottom:10px;">${subtitleText}</div>` : ''}
+    <div class="cards" style="grid-template-columns:repeat(${fields.length},1fr);">
+      ${fields.map(([l,v]) => `<div class="card"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('')}
+    </div>`;
+}
+function toggleTopBottom(wrapId, show){
+  const el = document.getElementById(wrapId);
+  if (el) el.style.display = show ? '' : 'none';
+}
+
 /* ============================================================
    OVERVIEW
    ============================================================ */
@@ -629,6 +740,44 @@ async function loadOverview(start, end){
   renderOverviewCards(rows, yoyTotals);
   renderOverviewTable(rows);
   await renderOverviewChart(start, end);
+  await renderBudgetPacing(start, end);
+}
+
+let budgetRowsCache = [];
+async function renderBudgetPacing(start, end){
+  spin(['budget-table']);
+  try {
+    const days = Math.max(1, Math.round((new Date(end) - new Date(start)) / 86400000) + 1);
+    const sql = `
+      SELECT bs.campaign_id, bs.campaign_name, bs.campaign_status,
+        b.campaign_budget_amount_micros AS budget_micros,
+        b.campaign_budget_status AS budget_status,
+        SUM(bs.metrics_cost_micros) AS total_cost_micros,
+        SUM(bs.metrics_conversions) AS conversions
+      FROM ${T('BudgetStats')} bs
+      JOIN ${T('Budget')} b ON bs.campaign_budget_id = b.campaign_budget_id
+      WHERE bs.segments_date BETWEEN '${start}' AND '${end}'
+      GROUP BY 1,2,3,4,5
+      ORDER BY total_cost_micros DESC
+    `;
+    const rows = await runQuery(sql);
+    budgetRowsCache = rows.map(r => {
+      const dailyBudget = num(r.budget_micros) / 1000000;
+      const avgDailySpend = (num(r.total_cost_micros) / 1000000) / days;
+      const utilization = safeDiv(avgDailySpend, dailyBudget);
+      return { ...r, dailyBudget, avgDailySpend, utilization };
+    });
+    document.getElementById('budget-table').innerHTML = budgetRowsCache.length ? `<table>
+      <tr><th>Campaign</th><th>Status</th><th>Daily budget</th><th>Avg daily spend</th><th>Utilisation</th><th>Pacing</th></tr>
+      ${budgetRowsCache.map(r => {
+        const capped = r.utilization >= 0.9;
+        return `<tr><td>${r.campaign_name}</td><td>${r.campaign_status}</td><td>${fmtGBP(r.dailyBudget)}</td><td>${fmtGBP(r.avgDailySpend)}</td><td>${fmtPct(r.utilization)}</td>
+          <td>${capped ? '<span class="badge" style="background:#fee2e2;color:#991b1b;">Likely capped</span>' : '<span class="badge" style="background:#dcfce7;color:#166534;">Headroom</span>'}</td></tr>`;
+      }).join('')}
+    </table>` : '<div class="empty">No budget data for this range.</div>';
+  } catch(e) {
+    document.getElementById('budget-table').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
+  }
 }
 
 function renderOverviewCards(rows, yoyTotals){
@@ -730,29 +879,37 @@ async function loadPMax(start, end){
   `;
   const rows = await runQuery(sql);
   pmaxRowsCache = rows;
-  const totals = rows.reduce((a,r)=>({spend:a.spend+num(r.spend), conv:a.conv+num(r.conversions), convVal:a.convVal+num(r.conv_value), clicks:a.clicks+num(r.clicks)}), {spend:0,conv:0,convVal:0,clicks:0});
+  const selected = populateCampaignFilter('pmaxCampaignFilter', rows);
+  const filteredRows = selected !== 'all' ? rows.filter(r => String(r.campaign_id) === selected) : rows;
+
+  const totals = filteredRows.reduce((a,r)=>({spend:a.spend+num(r.spend), conv:a.conv+num(r.conversions), convVal:a.convVal+num(r.conv_value), clicks:a.clicks+num(r.clicks)}), {spend:0,conv:0,convVal:0,clicks:0});
   document.getElementById('pmax-cards').innerHTML = [
     ['Spend', fmtGBP(totals.spend)], ['Conversions', fmtInt(totals.conv)],
     ['CPA', fmtGBP(safeDiv(totals.spend, totals.conv))], ['ROAS', safeDiv(totals.convVal, totals.spend).toFixed(2)+'x']
   ].map(([l,v]) => `<div class="card"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('');
 
-  document.getElementById('pmax-campaigns').innerHTML = rows.length ? `<table>
+  document.getElementById('pmax-campaigns').innerHTML = filteredRows.length ? `<table>
     <tr><th>Campaign</th><th>Spend</th><th>Conversions</th><th>CPA</th><th>ROAS</th></tr>
-    ${rows.map(r=>`<tr><td>${r.campaign_name}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td>
+    ${filteredRows.map(r=>`<tr><td>${r.campaign_name}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td>
       <td>${fmtGBP(safeDiv(r.spend,r.conversions))}</td><td>${safeDiv(r.conv_value,r.spend).toFixed(2)}x</td></tr>`).join('')}
   </table>` : '<div class="empty">No PMax data for this range.</div>';
 
   // Asset group product group stats — schema not fully verified; wrapped in try/catch
   try {
+    const campFilter = campFilterClause('pmaxCampaignFilter', 'camp');
     const agSql = `
       SELECT ag.asset_group_name,
         SUM(ags.metrics_impressions) AS impressions,
         ROUND(SUM(ags.metrics_cost_micros)/1000000,2) AS spend,
-        ROUND(SUM(ags.metrics_conversions),1) AS conversions
+        ROUND(SUM(ags.metrics_conversions),1) AS conversions,
+        ROUND(SUM(ags.metrics_conversions_value),2) AS conv_value
       FROM ${T('AssetGroupProductGroupStats')} ags
       JOIN ${T('AssetGroup')} ag
-        ON CAST(REGEXP_EXTRACT(ags.asset_group_product_group_view_asset_group, r'(\\d+)$') AS STRING) = CAST(ag.asset_group_id AS STRING)
+        ON CAST(REGEXP_EXTRACT(ags.asset_group_product_group_view_asset_group, r'(\d+)$') AS STRING) = CAST(ag.asset_group_id AS STRING)
+      JOIN ${T('Campaign')} camp
+        ON CAST(REGEXP_EXTRACT(CAST(ag.asset_group_campaign AS STRING), r'(\d+)$') AS INT64) = camp.campaign_id
       WHERE ags.segments_date BETWEEN '${start}' AND '${end}'
+        ${campFilter}
       GROUP BY 1 ORDER BY spend DESC LIMIT 25
     `;
     const agRows = await runQuery(agSql);
@@ -760,8 +917,25 @@ async function loadPMax(start, end){
       <tr><th>Asset group</th><th>Impressions</th><th>Spend</th><th>Conversions</th></tr>
       ${agRows.map(r=>`<tr><td>${r.asset_group_name}</td><td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
     </table>` : '<div class="empty">No asset group data.</div>';
+
+    // Top/bottom asset group by CPA, among those with meaningful spend
+    const eligible = agRows.filter(r => num(r.spend) >= 20 && num(r.conversions) > 0);
+    if (eligible.length >= 2) {
+      const sorted = [...eligible].sort((a,b) => safeDiv(num(a.spend),num(a.conversions)) - safeDiv(num(b.spend),num(b.conversions)));
+      const best = sorted[0], worst = sorted[sorted.length-1];
+      renderPerformerCard('pmax-top-card', '🏆 Best asset group (lowest CPA)', best, 'var(--green)', best.asset_group_name, '', [
+        ['CPA', fmtGBP(safeDiv(best.spend, best.conversions))], ['Conversions', fmtInt(best.conversions)], ['ROAS', safeDiv(best.conv_value, best.spend).toFixed(2)+'x']
+      ]);
+      renderPerformerCard('pmax-bottom-card', '⚠️ Weakest asset group (highest CPA)', worst, 'var(--red)', worst.asset_group_name, '', [
+        ['CPA', fmtGBP(safeDiv(worst.spend, worst.conversions))], ['Conversions', fmtInt(worst.conversions)], ['ROAS', safeDiv(worst.conv_value, worst.spend).toFixed(2)+'x']
+      ]);
+      toggleTopBottom('pmax-top-bottom-wrap', true);
+    } else {
+      toggleTopBottom('pmax-top-bottom-wrap', false);
+    }
   } catch(e) {
     document.getElementById('pmax-assetgroups').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
+    toggleTopBottom('pmax-top-bottom-wrap', false);
   }
 }
 
@@ -783,15 +957,18 @@ async function loadShopping(start, end){
     GROUP BY 1,2 ORDER BY spend DESC
   `;
   const rows = await runQuery(sql);
-  const totals = rows.reduce((a,r)=>({spend:a.spend+num(r.spend), conv:a.conv+num(r.conversions), convVal:a.convVal+num(r.conv_value)}), {spend:0,conv:0,convVal:0});
+  const selected = populateCampaignFilter('shopCampaignFilter', rows);
+  const filteredRows = selected !== 'all' ? rows.filter(r => String(r.campaign_id) === selected) : rows;
+
+  const totals = filteredRows.reduce((a,r)=>({spend:a.spend+num(r.spend), conv:a.conv+num(r.conversions), convVal:a.convVal+num(r.conv_value)}), {spend:0,conv:0,convVal:0});
   document.getElementById('shop-cards').innerHTML = [
     ['Spend', fmtGBP(totals.spend)], ['Conversions', fmtInt(totals.conv)],
     ['CPA', fmtGBP(safeDiv(totals.spend, totals.conv))], ['ROAS', safeDiv(totals.convVal, totals.spend).toFixed(2)+'x']
   ].map(([l,v]) => `<div class="card"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('');
 
-  document.getElementById('shop-campaigns').innerHTML = rows.length ? `<table>
+  document.getElementById('shop-campaigns').innerHTML = filteredRows.length ? `<table>
     <tr><th>Campaign</th><th>Spend</th><th>Conversions</th><th>ROAS</th></tr>
-    ${rows.map(r=>`<tr><td>${r.campaign_name}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td><td>${safeDiv(r.conv_value,r.spend).toFixed(2)}x</td></tr>`).join('')}
+    ${filteredRows.map(r=>`<tr><td>${r.campaign_name}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td><td>${safeDiv(r.conv_value,r.spend).toFixed(2)}x</td></tr>`).join('')}
   </table>` : '<div class="empty">No Shopping campaign data.</div>';
 
   // Real product titles come from your Shopping feed (google_ads_raw.product_feed) --
@@ -799,6 +976,7 @@ async function loadShopping(start, end){
   // and the feed is the authoritative source anyway (image, price, product type too).
   // Falls back to item ID / brand / category alone if that table doesn't exist yet
   // (i.e. load_product_feed.py hasn't been run) or an item isn't in the feed.
+  const shopCampFilter = campFilterClause('shopCampaignFilter', 'sp');
   let prodRows = [];
   let titledOk = false;
   try {
@@ -813,6 +991,7 @@ async function loadShopping(start, end){
       FROM ${T('ShoppingProductStats')} sp
       LEFT JOIN \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.product_feed\` pf ON sp.segments_product_item_id = pf.id
       WHERE sp.segments_date BETWEEN '${start}' AND '${end}'
+        ${shopCampFilter}
       GROUP BY 1,2,3,4,5,6 ORDER BY spend DESC LIMIT 30
     `;
     prodRows = await runQuery(titledSql);
@@ -828,6 +1007,7 @@ async function loadShopping(start, end){
         ROUND(SUM(metrics_conversions),1) AS conversions
       FROM ${T('ShoppingProductStats')}
       WHERE segments_date BETWEEN '${start}' AND '${end}'
+        ${shopCampFilter}
       GROUP BY 1,2,3 ORDER BY spend DESC LIMIT 30
     `;
     try { prodRows = await runQuery(fallbackSql); } catch(e2) { prodRows = []; }
@@ -840,6 +1020,26 @@ async function loadShopping(start, end){
       return `<tr><td>${name||'--'}</td><td>${r.brand||'--'}</td><td>${(titledOk?r.product_type:r.category)||'--'}</td>${titledOk ? `<td>${r.price||'--'}</td>` : ''}<td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td>${titledOk ? `<td>${safeDiv(r.conv_value,r.spend).toFixed(2)}x</td>` : ''}</tr>`;
     }).join('')}
   </table>${titledOk ? '' : '<div class="desc" style="margin-top:8px;">Titles unavailable -- run load_product_feed.py to load your Shopping feed into BigQuery, then reload this tab.</div>'}` : '<div class="empty">No product-level data.</div>';
+
+  // Top/bottom product by ROAS, among titled products with meaningful spend
+  if (titledOk) {
+    const eligible = prodRows.filter(r => num(r.spend) >= 20 && num(r.conv_value) > 0);
+    if (eligible.length >= 2) {
+      const sorted = [...eligible].sort((a,b) => safeDiv(num(b.conv_value),num(b.spend)) - safeDiv(num(a.conv_value),num(a.spend)));
+      const best = sorted[0], worst = sorted[sorted.length-1];
+      renderPerformerCard('shop-top-card', '🏆 Best product (highest ROAS)', best, 'var(--green)', best.title || best.item_id, best.brand || '', [
+        ['ROAS', safeDiv(best.conv_value, best.spend).toFixed(2)+'x'], ['Spend', fmtGBP(best.spend)], ['Conversions', fmtInt(best.conversions)]
+      ]);
+      renderPerformerCard('shop-bottom-card', '⚠️ Weakest product (lowest ROAS)', worst, 'var(--red)', worst.title || worst.item_id, worst.brand || '', [
+        ['ROAS', safeDiv(worst.conv_value, worst.spend).toFixed(2)+'x'], ['Spend', fmtGBP(worst.spend)], ['Conversions', fmtInt(worst.conversions)]
+      ]);
+      toggleTopBottom('shop-top-bottom-wrap', true);
+    } else {
+      toggleTopBottom('shop-top-bottom-wrap', false);
+    }
+  } else {
+    toggleTopBottom('shop-top-bottom-wrap', false);
+  }
 }
 
 
@@ -847,7 +1047,7 @@ async function loadShopping(start, end){
    SEARCH
    ============================================================ */
 async function loadSearch(start, end){
-  spin(['srch-cards', 'srch-campaigns', 'srch-keywords']);
+  spin(['srch-cards', 'srch-campaigns', 'srch-keywords', 'srch-ads-table']);
   renderTrendChart('srch-chart', 'SEARCH', start, end, '#1e40af').catch(e => console.warn('Search trend chart failed:', e.message));
   const sql = `
     SELECT c.campaign_id, c.campaign_name,
@@ -860,18 +1060,22 @@ async function loadSearch(start, end){
     GROUP BY 1,2 ORDER BY spend DESC
   `;
   const rows = await runQuery(sql);
-  const totals = rows.reduce((a,r)=>({spend:a.spend+num(r.spend), clicks:a.clicks+num(r.clicks), conv:a.conv+num(r.conversions)}), {spend:0,clicks:0,conv:0});
+  const selected = populateCampaignFilter('srchCampaignFilter', rows);
+  const filteredRows = selected !== 'all' ? rows.filter(r => String(r.campaign_id) === selected) : rows;
+
+  const totals = filteredRows.reduce((a,r)=>({spend:a.spend+num(r.spend), clicks:a.clicks+num(r.clicks), conv:a.conv+num(r.conversions)}), {spend:0,clicks:0,conv:0});
   document.getElementById('srch-cards').innerHTML = [
     ['Spend', fmtGBP(totals.spend)], ['Clicks', fmtInt(totals.clicks)],
     ['Conversions', fmtInt(totals.conv)], ['CPA', fmtGBP(safeDiv(totals.spend,totals.conv))]
   ].map(([l,v]) => `<div class="card"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('');
 
-  document.getElementById('srch-campaigns').innerHTML = rows.length ? `<table>
+  document.getElementById('srch-campaigns').innerHTML = filteredRows.length ? `<table>
     <tr><th>Campaign</th><th>Clicks</th><th>Spend</th><th>Conversions</th></tr>
-    ${rows.map(r=>`<tr><td>${r.campaign_name}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+    ${filteredRows.map(r=>`<tr><td>${r.campaign_name}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
   </table>` : '<div class="empty">No Search campaign data.</div>';
 
   try {
+    const srchCampFilter = campFilterClause('srchCampaignFilter', 'ks');
     const kwSql = `
       SELECT k.ad_group_criterion_keyword_text AS keyword,
         k.ad_group_criterion_keyword_match_type AS match_type,
@@ -883,6 +1087,7 @@ async function loadSearch(start, end){
         ON ks.ad_group_criterion_criterion_id = k.ad_group_criterion_criterion_id
         AND ks.ad_group_id = k.ad_group_id
       WHERE ks.segments_date BETWEEN '${start}' AND '${end}'
+        ${srchCampFilter}
       GROUP BY 1,2 ORDER BY spend DESC LIMIT 25
     `;
     const kwRows = await runQuery(kwSql);
@@ -891,8 +1096,92 @@ async function loadSearch(start, end){
       <tr><th>Keyword</th><th>Match type</th><th>Clicks</th><th>Spend</th><th>Conversions</th></tr>
       ${kwRows.map(r=>`<tr><td>${r.keyword}</td><td>${r.match_type||''}</td><td>${fmtInt(r.clicks)}</td><td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
     </table>` : '<div class="empty">No keyword data.</div>';
+
+    // Top/bottom keyword by CPA, among those with meaningful spend and at least one conversion
+    const eligible = kwRows.filter(r => num(r.spend) >= 20 && num(r.conversions) > 0);
+    if (eligible.length >= 2) {
+      const sorted = [...eligible].sort((a,b) => safeDiv(num(a.spend),num(a.conversions)) - safeDiv(num(b.spend),num(b.conversions)));
+      const best = sorted[0], worst = sorted[sorted.length-1];
+      renderPerformerCard('srch-top-card', '🏆 Best keyword (lowest CPA)', best, 'var(--green)', best.keyword, best.match_type || '', [
+        ['CPA', fmtGBP(safeDiv(best.spend, best.conversions))], ['Clicks', fmtInt(best.clicks)], ['Conversions', fmtInt(best.conversions)]
+      ]);
+      renderPerformerCard('srch-bottom-card', '⚠️ Weakest keyword (highest CPA)', worst, 'var(--red)', worst.keyword, worst.match_type || '', [
+        ['CPA', fmtGBP(safeDiv(worst.spend, worst.conversions))], ['Clicks', fmtInt(worst.clicks)], ['Conversions', fmtInt(worst.conversions)]
+      ]);
+      toggleTopBottom('srch-top-bottom-wrap', true);
+    } else {
+      toggleTopBottom('srch-top-bottom-wrap', false);
+    }
   } catch(e) {
     document.getElementById('srch-keywords').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
+    toggleTopBottom('srch-top-bottom-wrap', false);
+  }
+
+  /* ---- Ad copy performance: real RSA headlines/descriptions, Ad Strength, and
+     performance — genuine top/bottom AD, not just keyword. Headline/description
+     text extracted from the nested asset array via UNNEST, confirmed against the
+     account (field is `.text` on each struct). ---- */
+  try {
+    const srchAdCampFilter = campFilterClause('srchCampaignFilter', 'camp');
+    const adSql = `
+      WITH ad_creative AS (
+        SELECT ad_group_ad_ad_id AS ad_id,
+          ARRAY_TO_STRING(ARRAY(SELECT h.text FROM UNNEST(ad_group_ad_ad_responsive_search_ad_headlines) AS h), ' | ') AS headlines,
+          ARRAY_TO_STRING(ARRAY(SELECT d.text FROM UNNEST(ad_group_ad_ad_responsive_search_ad_descriptions) AS d), ' | ') AS descriptions,
+          ad_group_ad_ad_strength AS ad_strength,
+          ad_group_ad_status AS status,
+          ad_group_id, campaign_id
+        FROM ${T('Ad')}
+        WHERE ad_group_ad_ad_type = 'RESPONSIVE_SEARCH_AD'
+      )
+      SELECT ac.ad_id, ac.headlines, ac.descriptions, ac.ad_strength, ac.status,
+        camp.campaign_name, ag.ad_group_name,
+        SUM(s.metrics_impressions) AS impressions,
+        SUM(s.metrics_clicks) AS clicks,
+        ROUND(SUM(s.metrics_cost_micros)/1000000,2) AS spend,
+        ROUND(SUM(s.metrics_conversions),1) AS conversions
+      FROM ${T('AdStats')} s
+      JOIN ad_creative ac ON s.ad_group_ad_ad_id = ac.ad_id
+      JOIN ${T('Campaign')} camp ON s.campaign_id = camp.campaign_id
+      LEFT JOIN ${T('AdGroup')} ag ON s.ad_group_id = ag.ad_group_id
+      WHERE camp.campaign_advertising_channel_type = 'SEARCH'
+        AND s.segments_date BETWEEN '${start}' AND '${end}'
+        ${srchAdCampFilter}
+      GROUP BY 1,2,3,4,5,6,7 ORDER BY spend DESC LIMIT 25
+    `;
+    const adRows = await runQuery(adSql);
+    srchAdsCache = adRows;
+    const strengthColors = { EXCELLENT: ['#dcfce7','#166534'], GOOD: ['#dcfce7','#166534'], AVERAGE: ['#fef3c7','#92400e'], POOR: ['#fee2e2','#991b1b'], PENDING: ['#f1f5f9','#475569'] };
+    const strengthBadge = (s) => {
+      const [bg, fg] = strengthColors[s] || strengthColors.PENDING;
+      return `<span class="badge" style="background:${bg};color:${fg};">${s||'—'}</span>`;
+    };
+    document.getElementById('srch-ads-table').innerHTML = adRows.length ? `<table>
+      <tr><th>Headlines</th><th>Campaign</th><th>Ad group</th><th>Strength</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>Spend</th><th>Conversions</th></tr>
+      ${adRows.map(r=>`<tr><td style="max-width:320px;" title="${(r.headlines||'').replace(/"/g,'&quot;')}">${(r.headlines||'').slice(0,80)}${(r.headlines||'').length>80?'…':''}</td>
+        <td>${r.campaign_name||''}</td><td>${r.ad_group_name||''}</td><td>${strengthBadge(r.ad_strength)}</td>
+        <td>${fmtInt(r.impressions)}</td><td>${fmtInt(r.clicks)}</td><td>${fmtPct(safeDiv(r.clicks,r.impressions))}</td>
+        <td>${fmtGBP(r.spend)}</td><td>${fmtInt(r.conversions)}</td></tr>`).join('')}
+    </table>` : '<div class="empty">No Search ad-level data for this range.</div>';
+
+    // Top/bottom AD by CTR — the most direct read on ad copy quality
+    const eligibleAds = adRows.filter(r => num(r.impressions) >= 500);
+    if (eligibleAds.length >= 2) {
+      const sorted = [...eligibleAds].sort((a,b) => safeDiv(num(b.clicks),num(b.impressions)) - safeDiv(num(a.clicks),num(a.impressions)));
+      const best = sorted[0], worst = sorted[sorted.length-1];
+      renderPerformerCard('srch-ad-top-card', '🏆 Best ad (highest CTR)', best, 'var(--green)', (best.headlines||'').slice(0,60), `${best.campaign_name} · ${best.ad_group_name||''}`, [
+        ['CTR', fmtPct(safeDiv(best.clicks, best.impressions))], ['Clicks', fmtInt(best.clicks)], ['Strength', best.ad_strength||'—']
+      ]);
+      renderPerformerCard('srch-ad-bottom-card', '⚠️ Weakest ad (lowest CTR)', worst, 'var(--red)', (worst.headlines||'').slice(0,60), `${worst.campaign_name} · ${worst.ad_group_name||''}`, [
+        ['CTR', fmtPct(safeDiv(worst.clicks, worst.impressions))], ['Clicks', fmtInt(worst.clicks)], ['Strength', worst.ad_strength||'—']
+      ]);
+      toggleTopBottom('srch-ad-top-bottom-wrap', true);
+    } else {
+      toggleTopBottom('srch-ad-top-bottom-wrap', false);
+    }
+  } catch(e) {
+    document.getElementById('srch-ads-table').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
+    toggleTopBottom('srch-ad-top-bottom-wrap', false);
   }
 }
 
@@ -948,6 +1237,10 @@ document.getElementById('panel-searchterms').addEventListener('click', (e) => {
 async function loadVideo(start, end){
   spin(['vid-cards', 'vid-campaigns', 'vid-videos', 'vid-geo-table', 'vid-placements-table', 'vid-audience-table']);
 
+  const filterSelect = document.getElementById('vidCampaignFilter');
+  const vidCampaignFilter = filterSelect.value;
+  const campFilter = (alias) => vidCampaignFilter !== 'all' ? ` AND ${alias}.campaign_id = ${vidCampaignFilter}` : '';
+
   const sql = `
     SELECT c.campaign_id, c.campaign_name,
       SUM(s.metrics_impressions) AS impressions,
@@ -959,7 +1252,15 @@ async function loadVideo(start, end){
     GROUP BY 1,2 ORDER BY spend DESC
   `;
   const rows = await runQuery(sql);
-  const totals = rows.reduce((a,r)=>({spend:a.spend+num(r.spend), impr:a.impr+num(r.impressions)}), {spend:0,impr:0});
+
+  // Populate the campaign filter dropdown, keeping the current selection if it's still valid.
+  const prevSelection = filterSelect.value;
+  filterSelect.innerHTML = '<option value="all">All video campaigns</option>' +
+    rows.map(r => `<option value="${r.campaign_id}">${r.campaign_name}</option>`).join('');
+  if (rows.some(r => String(r.campaign_id) === prevSelection)) filterSelect.value = prevSelection;
+
+  const filteredRows = vidCampaignFilter !== 'all' ? rows.filter(r => String(r.campaign_id) === vidCampaignFilter) : rows;
+  const totals = filteredRows.reduce((a,r)=>({spend:a.spend+num(r.spend), impr:a.impr+num(r.impressions)}), {spend:0,impr:0});
 
   // True view counts, CPV & cross-device conversions live on GeoStats, not VideoBasicStats.
   let viewTotals = {views:0, cpv:0, crossDevice:0};
@@ -972,6 +1273,7 @@ async function loadVideo(start, end){
       JOIN ${T('Campaign')} c ON g.campaign_id = c.campaign_id
       WHERE c.campaign_advertising_channel_type = 'VIDEO'
         AND g.segments_date BETWEEN '${start}' AND '${end}'
+        ${campFilter('g')}
     `;
     const vr = await runQuery(vidSql);
     if (vr.length) viewTotals = { views: num(vr[0].views), cpv: safeDiv(num(vr[0].spend), num(vr[0].views)), crossDevice: num(vr[0].cross_device) };
@@ -989,6 +1291,7 @@ async function loadVideo(start, end){
       JOIN ${T('Campaign')} c ON s.campaign_id = c.campaign_id
       WHERE c.campaign_advertising_channel_type = 'VIDEO'
         AND s.segments_date BETWEEN '${start}' AND '${end}'
+        ${campFilter('s')}
     `;
     const vw = await runQuery(viewabSql);
     if (vw.length && num(vw[0].measurable) > 0) {
@@ -1009,16 +1312,19 @@ async function loadVideo(start, end){
     ['Measurability', viewability ? fmtPct(viewability.measurablePct) : '—']
   ].map(([l,v]) => `<div class="card"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('');
 
-  /* ---- Completion funnel ---- */
+  /* ---- Completion funnel (scoped to VIDEO campaigns, and to the filter if set) ---- */
   try {
     const funnelSql = `
       SELECT
-        AVG(metrics_video_quartile_p25_rate) AS q25,
-        AVG(metrics_video_quartile_p50_rate) AS q50,
-        AVG(metrics_video_quartile_p75_rate) AS q75,
-        AVG(metrics_video_quartile_p100_rate) AS q100
-      FROM ${T('VideoNonClickStats')}
-      WHERE segments_date BETWEEN '${start}' AND '${end}'
+        AVG(vn.metrics_video_quartile_p25_rate) AS q25,
+        AVG(vn.metrics_video_quartile_p50_rate) AS q50,
+        AVG(vn.metrics_video_quartile_p75_rate) AS q75,
+        AVG(vn.metrics_video_quartile_p100_rate) AS q100
+      FROM ${T('VideoNonClickStats')} vn
+      JOIN ${T('Campaign')} c ON vn.campaign_id = c.campaign_id
+      WHERE c.campaign_advertising_channel_type = 'VIDEO'
+        AND vn.segments_date BETWEEN '${start}' AND '${end}'
+        ${campFilter('c')}
     `;
     const fr = await runQuery(funnelSql);
     const funnel = fr.length ? fr[0] : {};
@@ -1034,9 +1340,9 @@ async function loadVideo(start, end){
     });
   } catch(e) { console.warn('Video completion funnel failed:', e.message); }
 
-  document.getElementById('vid-campaigns').innerHTML = rows.length ? `<table>
+  document.getElementById('vid-campaigns').innerHTML = filteredRows.length ? `<table>
     <tr><th>Campaign</th><th>Impressions</th><th>Spend</th></tr>
-    ${rows.map(r=>`<tr><td>${r.campaign_name}</td><td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td></tr>`).join('')}
+    ${filteredRows.map(r=>`<tr><td>${r.campaign_name}</td><td>${fmtInt(r.impressions)}</td><td>${fmtGBP(r.spend)}</td></tr>`).join('')}
   </table>` : '<div class="empty">No Video campaign data.</div>';
 
   /* ---- Daily views & spend trend ---- */
@@ -1049,6 +1355,7 @@ async function loadVideo(start, end){
       JOIN ${T('Campaign')} c ON g.campaign_id = c.campaign_id
       WHERE c.campaign_advertising_channel_type = 'VIDEO'
         AND g.segments_date BETWEEN '${start}' AND '${end}'
+        ${campFilter('g')}
       GROUP BY 1 ORDER BY 1
     `;
     const trendRows = await runQuery(trendSql);
@@ -1077,6 +1384,7 @@ async function loadVideo(start, end){
       ${campaignBase()}
       WHERE c.campaign_advertising_channel_type = 'VIDEO'
         AND s.segments_date BETWEEN '${start}' AND '${end}'
+        ${campFilter('c')}
       GROUP BY 1 ORDER BY spend DESC
     `;
     const netRows = await runQuery(netSql);
@@ -1102,6 +1410,7 @@ async function loadVideo(start, end){
       ${campaignBase()}
       WHERE c.campaign_advertising_channel_type = 'VIDEO'
         AND s.segments_date BETWEEN '${start}' AND '${end}'
+        ${campFilter('c')}
       GROUP BY 1 ORDER BY spend DESC
     `;
     const devRows = await runQuery(devSql);
@@ -1128,6 +1437,7 @@ async function loadVideo(start, end){
       JOIN ${T('Campaign')} c ON g.campaign_id = c.campaign_id
       WHERE c.campaign_advertising_channel_type = 'VIDEO'
         AND g.segments_date BETWEEN '${start}' AND '${end}'
+        ${campFilter('g')}
       GROUP BY 1
     `;
     const geoRows = await runQuery(geoSql);
@@ -1169,6 +1479,7 @@ async function loadVideo(start, end){
       JOIN ${T('Campaign')} c ON ps.campaign_id = c.campaign_id
       WHERE c.campaign_advertising_channel_type = 'VIDEO'
         AND ps.segments_date BETWEEN '${start}' AND '${end}'
+        ${campFilter('c')}
     `;
     const check = await runQuery(placeCheckSql);
     const withUrl = check.length ? num(check[0].with_url) : 0;
@@ -1192,6 +1503,7 @@ async function loadVideo(start, end){
         WHERE c.campaign_advertising_channel_type = 'VIDEO'
           AND ps.segments_date BETWEEN '${start}' AND '${end}'
           AND p.ad_group_criterion_placement_url IS NOT NULL
+          ${campFilter('c')}
         GROUP BY 1 ORDER BY spend DESC LIMIT 25
       `;
       const placeRows = await runQuery(placeSql);
@@ -1224,13 +1536,14 @@ async function loadVideo(start, end){
         ROUND(SUM(s.metrics_conversions),1) AS conversions
       FROM ${T('AdGroupAudienceStats')} s
       JOIN ${T('Campaign')} c
-        ON CAST(REGEXP_EXTRACT(CAST(s.ad_group_campaign AS STRING), r'(\\d+)$') AS INT64) = c.campaign_id
+        ON CAST(REGEXP_EXTRACT(CAST(s.ad_group_campaign AS STRING), r'(\d+)$') AS INT64) = c.campaign_id
       LEFT JOIN \`${CONFIG.PROJECT_ID}.${CONFIG.DATASET}.audience_verticals\` v
         ON CAST(s.ad_group_criterion_criterion_id AS STRING) = CAST(v.\`Criterion ID\` AS STRING)
       LEFT JOIN ${T('Audience')} aud
         ON CAST(s.ad_group_criterion_criterion_id AS STRING) = CAST(aud.audience_id AS STRING)
       WHERE c.campaign_advertising_channel_type = 'VIDEO'
         AND s.segments_date BETWEEN '${start}' AND '${end}'
+        ${campFilter('c')}
       GROUP BY 1,2 ORDER BY impressions DESC LIMIT 25
     `;
     const audRows = await runQuery(audSql);
@@ -1256,6 +1569,7 @@ async function loadVideo(start, end){
       JOIN ${T('Campaign')} c ON h.campaign_id = c.campaign_id
       WHERE c.campaign_advertising_channel_type = 'VIDEO'
         AND h.segments_date BETWEEN '${start}' AND '${end}'
+        ${campFilter('c')}
       GROUP BY 1 ORDER BY CAST(hour AS INT64)
     `;
     const hourRows = await runQuery(hourSql);
@@ -1267,45 +1581,53 @@ async function loadVideo(start, end){
     });
   } catch(e) { console.warn('Video hour-of-day chart failed:', e.message); }
 
-  /* ---- Videos: real per-video views, view rate, CPV & quartile completion ----
-     VideoNonClickStats carries genuine per-video view/quartile data that VideoBasicStats
-     doesn't — combining both plus thumbnails (video_id values are real YouTube IDs). */
+  /* ---- Videos: real per-video views, view rate, CPV & quartile completion —
+     now split by campaign AND ad group, so it's clear which ad belongs to what. ---- */
+  let vTop = [];
   try {
     const vTopSql = `
       WITH clicks_data AS (
-        SELECT video_id,
+        SELECT video_id, campaign_id, ad_group_id,
           SUM(metrics_impressions) AS impressions,
           SUM(metrics_clicks) AS clicks,
           ROUND(SUM(metrics_cost_micros)/1000000,2) AS spend
         FROM ${T('VideoBasicStats')}
         WHERE segments_date BETWEEN '${start}' AND '${end}'
-        GROUP BY 1
+        GROUP BY 1,2,3
       ),
       view_data AS (
-        SELECT video_id,
+        SELECT video_id, campaign_id, ad_group_id,
           SUM(metrics_video_trueview_views) AS views,
           AVG(metrics_video_trueview_view_rate) AS view_rate,
           AVG(metrics_trueview_average_cpv) AS avg_cpv,
-          AVG(metrics_video_quartile_p25_rate) AS q25,
-          AVG(metrics_video_quartile_p50_rate) AS q50,
-          AVG(metrics_video_quartile_p75_rate) AS q75,
           AVG(metrics_video_quartile_p100_rate) AS q100
         FROM ${T('VideoNonClickStats')}
         WHERE segments_date BETWEEN '${start}' AND '${end}'
-        GROUP BY 1
+        GROUP BY 1,2,3
       )
-      SELECT v.video_title AS title, v.video_id, v.video_duration_millis AS duration_ms,
-        c.impressions, c.clicks, c.spend,
-        vd.views, vd.view_rate, vd.avg_cpv, vd.q100
-      FROM clicks_data c
-      FULL OUTER JOIN view_data vd ON c.video_id = vd.video_id
+      SELECT
+        vinfo.video_title AS title,
+        COALESCE(cd.video_id, vw.video_id) AS video_id,
+        vinfo.video_duration_millis AS duration_ms,
+        camp.campaign_name AS campaign_name,
+        ag.ad_group_name AS ad_group_name,
+        cd.impressions, cd.clicks, cd.spend,
+        vw.views, vw.view_rate, vw.avg_cpv, vw.q100
+      FROM clicks_data cd
+      FULL OUTER JOIN view_data vw
+        ON cd.video_id = vw.video_id AND cd.campaign_id = vw.campaign_id AND cd.ad_group_id = vw.ad_group_id
       LEFT JOIN (
         SELECT video_id, ANY_VALUE(video_title) AS video_title, ANY_VALUE(video_duration_millis) AS video_duration_millis
         FROM ${T('Video')} GROUP BY video_id
-      ) v ON COALESCE(c.video_id, vd.video_id) = v.video_id
-      ORDER BY c.spend DESC LIMIT 20
+      ) vinfo ON COALESCE(cd.video_id, vw.video_id) = vinfo.video_id
+      JOIN ${T('Campaign')} camp ON COALESCE(cd.campaign_id, vw.campaign_id) = camp.campaign_id
+      LEFT JOIN ${T('AdGroup')} ag ON COALESCE(cd.ad_group_id, vw.ad_group_id) = ag.ad_group_id
+      WHERE camp.campaign_advertising_channel_type = 'VIDEO'
+        ${campFilter('camp')}
+      ORDER BY cd.spend DESC LIMIT 30
     `;
-    const vTop = await runQuery(vTopSql);
+    vTop = await runQuery(vTopSql);
+    vidVideosCache = vTop;
     const fmtDuration = (ms) => {
       if (!ms) return '—';
       const totalSec = Math.round(num(ms)/1000);
@@ -1313,10 +1635,10 @@ async function loadVideo(start, end){
       return `${m}:${String(s).padStart(2,'0')}`;
     };
     document.getElementById('vid-videos').innerHTML = vTop.length ? `<table>
-      <tr><th>Video</th><th>Duration</th><th>Impressions</th><th>Views</th><th>View rate</th><th>CPV</th><th>Completion</th><th>Spend</th></tr>
+      <tr><th>Video</th><th>Campaign</th><th>Ad group</th><th>Duration</th><th>Impressions</th><th>Views</th><th>View rate</th><th>CPV</th><th>Completion</th><th>Spend</th></tr>
       ${vTop.map(r=>{
         const thumb = r.video_id ? `<img src="https://img.youtube.com/vi/${r.video_id}/default.jpg" style="width:64px;height:36px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:8px;">` : '';
-        return `<tr><td>${thumb}${r.title||r.video_id||'—'}</td><td>${fmtDuration(r.duration_ms)}</td>
+        return `<tr><td>${thumb}${r.title||r.video_id||'—'}</td><td>${r.campaign_name||'—'}</td><td>${r.ad_group_name||'—'}</td><td>${fmtDuration(r.duration_ms)}</td>
         <td>${fmtInt(r.impressions)}</td><td>${r.views ? fmtInt(r.views) : '—'}</td><td>${r.view_rate ? fmtPct(r.view_rate) : '—'}</td>
         <td>${r.avg_cpv ? '£'+num(r.avg_cpv).toFixed(3) : '—'}</td><td>${r.q100 ? fmtPct(r.q100) : '—'}</td><td>${fmtGBP(r.spend)}</td></tr>`;
       }).join('')}
@@ -1324,11 +1646,34 @@ async function loadVideo(start, end){
   } catch(e) {
     document.getElementById('vid-videos').innerHTML = `<div class="empty">Query error: ${e.message}</div>`;
   }
+
+  /* ---- Top / bottom performing ad, by CPV, among videos with meaningful spend ---- */
+  const eligible = vTop.filter(r => num(r.avg_cpv) > 0 && num(r.spend) >= 50);
+  const renderAdCard = (containerId, label, r, badgeColor) => {
+    const el = document.getElementById(containerId);
+    if (!r) { el.innerHTML = `<h2>${label}</h2><div class="empty">Not enough data (needs videos with £50+ spend and view data).</div>`; return; }
+    const thumb = r.video_id ? `<img src="https://img.youtube.com/vi/${r.video_id}/mqdefault.jpg" style="width:100%;border-radius:8px;margin-bottom:10px;">` : '';
+    el.innerHTML = `
+      <h2 style="color:${badgeColor};">${label}</h2>
+      ${thumb}
+      <div style="font-weight:600;font-size:14px;margin-bottom:6px;">${r.title || r.video_id}</div>
+      <div class="desc" style="margin-bottom:10px;">${r.campaign_name || ''}${r.ad_group_name ? ' · ' + r.ad_group_name : ''}</div>
+      <div class="cards" style="grid-template-columns:repeat(3,1fr);">
+        <div class="card"><div class="label">CPV</div><div class="value">£${num(r.avg_cpv).toFixed(3)}</div></div>
+        <div class="card"><div class="label">Views</div><div class="value">${fmtInt(r.views)}</div></div>
+        <div class="card"><div class="label">Completion</div><div class="value">${r.q100 ? fmtPct(r.q100) : '—'}</div></div>
+      </div>`;
+  };
+  if (eligible.length >= 2) {
+    const sorted = [...eligible].sort((a,b) => num(a.avg_cpv) - num(b.avg_cpv));
+    renderAdCard('vid-top-ad-card', '🏆 Best CPV', sorted[0], 'var(--green)');
+    renderAdCard('vid-bottom-ad-card', '⚠️ Worst CPV', sorted[sorted.length-1], 'var(--red)');
+    document.getElementById('vid-top-bottom-wrap').style.display = '';
+  } else {
+    document.getElementById('vid-top-bottom-wrap').style.display = 'none';
+  }
 }
 
-/* ============================================================
-   DEMAND GEN
-   ============================================================ */
 async function loadDemandGen(start, end){
   spin(['dg-cards', 'dg-campaigns']);
   const sql = `
@@ -1343,22 +1688,27 @@ async function loadDemandGen(start, end){
   `;
   const rows = await runQuery(sql);
   dgRowsCache = rows;
-  const totals = rows.reduce((a,r)=>({spend:a.spend+num(r.spend), clicks:a.clicks+num(r.clicks), conv:a.conv+num(r.conversions), impr:a.impr+num(r.impressions)}), {spend:0,clicks:0,conv:0,impr:0});
+
+  const uniqueCampaigns = Object.values(rows.reduce((acc, r) => { acc[r.campaign_id] = r; return acc; }, {}));
+  const selected = populateCampaignFilter('dgCampaignFilter', uniqueCampaigns);
+  const filteredRows = selected !== 'all' ? rows.filter(r => String(r.campaign_id) === selected) : rows;
+
+  const totals = filteredRows.reduce((a,r)=>({spend:a.spend+num(r.spend), clicks:a.clicks+num(r.clicks), conv:a.conv+num(r.conversions), impr:a.impr+num(r.impressions)}), {spend:0,clicks:0,conv:0,impr:0});
   document.getElementById('dg-cards').innerHTML = [
     ['Impressions', fmtInt(totals.impr)], ['Clicks', fmtInt(totals.clicks)],
     ['Spend', fmtGBP(totals.spend)], ['Conversions', fmtInt(totals.conv)]
   ].map(([l,v]) => `<div class="card"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('');
 
   const byCampaign = {};
-  rows.forEach(r => { byCampaign[r.campaign_name] = byCampaign[r.campaign_name] || {spend:0,conv:0}; byCampaign[r.campaign_name].spend += num(r.spend); byCampaign[r.campaign_name].conv += num(r.conversions); });
+  filteredRows.forEach(r => { byCampaign[r.campaign_name] = byCampaign[r.campaign_name] || {spend:0,conv:0}; byCampaign[r.campaign_name].spend += num(r.spend); byCampaign[r.campaign_name].conv += num(r.conversions); });
   const campRows = Object.entries(byCampaign);
   document.getElementById('dg-campaigns').innerHTML = campRows.length ? `<table>
     <tr><th>Campaign</th><th>Spend</th><th>Conversions</th></tr>
     ${campRows.map(([name,v])=>`<tr><td>${name}</td><td>${fmtGBP(v.spend)}</td><td>${fmtInt(v.conv)}</td></tr>`).join('')}
   </table>` : '<div class="empty">No Demand Gen campaign data.</div>';
 
-  const dates = [...new Set(rows.map(r=>r.date))].sort();
-  const spendByDate = dates.map(d => rows.filter(r=>r.date===d).reduce((s,r)=>s+num(r.spend),0));
+  const dates = [...new Set(filteredRows.map(r=>r.date))].sort();
+  const spendByDate = dates.map(d => filteredRows.filter(r=>r.date===d).reduce((s,r)=>s+num(r.spend),0));
   if (window.dgChartInstance) window.dgChartInstance.destroy();
   window.dgChartInstance = new Chart(document.getElementById('dg-chart'), {
     type:'line', data:{ labels:dates, datasets:[{ label:'Spend', data:spendByDate, borderColor:'#166534', backgroundColor:'#16653422', tension:.3, fill:true }] },
@@ -1423,7 +1773,9 @@ let regRowsCache = [];
 let pmaxRowsCache = [];
 let shopProductsCache = [];
 let srchKeywordsCache = [];
+let srchAdsCache = [];
 let vidPlacementsCache = [];
+let vidVideosCache = [];
 let dgRowsCache = [];
 async function loadCities(start, end){
   spin(['city-table']);
@@ -1561,6 +1913,11 @@ document.getElementById('ov-export').addEventListener('click', () => {
     ['Channel','Impressions','Clicks','Spend','Conversions','Conv value'],
     ovRowsCache.map(r => [r.channel, r.impressions, r.clicks, r.spend, r.conversions, r.conv_value]));
 });
+document.getElementById('budget-export').addEventListener('click', () => {
+  downloadCSV('budget_pacing.csv',
+    ['Campaign','Status','Daily budget','Avg daily spend','Utilisation'],
+    budgetRowsCache.map(r => [r.campaign_name, r.campaign_status, r.dailyBudget, r.avgDailySpend, r.utilization]));
+});
 document.getElementById('st-export').addEventListener('click', () => {
   downloadCSV('search_terms.csv',
     ['Term','Clicks','Spend','Conversions'],
@@ -1591,10 +1948,40 @@ document.getElementById('srch-export').addEventListener('click', () => {
     ['Keyword','Match type','Clicks','Spend','Conversions'],
     srchKeywordsCache.map(r => [r.keyword, r.match_type || '', r.clicks, r.spend, r.conversions]));
 });
+document.getElementById('srch-ads-export').addEventListener('click', () => {
+  downloadCSV('search_ads.csv',
+    ['Headlines','Descriptions','Campaign','Ad group','Strength','Status','Impressions','Clicks','Spend','Conversions'],
+    srchAdsCache.map(r => [r.headlines, r.descriptions, r.campaign_name, r.ad_group_name, r.ad_strength, r.status, r.impressions, r.clicks, r.spend, r.conversions]));
+});
 document.getElementById('vid-export').addEventListener('click', () => {
   downloadCSV('video_placements.csv',
     ['Placement','Impressions','Clicks','Spend','Conversions'],
     vidPlacementsCache.map(r => [r.placement, r.impressions, r.clicks, r.spend, r.conversions]));
+});
+document.getElementById('vid-videos-export').addEventListener('click', () => {
+  downloadCSV('videos_by_campaign_adgroup.csv',
+    ['Video','Video ID','Campaign','Ad group','Duration (ms)','Impressions','Clicks','Views','View rate','CPV','Completion','Spend'],
+    vidVideosCache.map(r => [r.title, r.video_id, r.campaign_name, r.ad_group_name, r.duration_ms, r.impressions, r.clicks, r.views, r.view_rate, r.avg_cpv, r.q100, r.spend]));
+});
+document.getElementById('vidCampaignFilter').addEventListener('change', () => {
+  if (!currentRangeKey) return; // nothing loaded yet — filter has nothing to apply to
+  runTabLoad('video');
+});
+document.getElementById('pmaxCampaignFilter').addEventListener('change', () => {
+  if (!currentRangeKey) return;
+  runTabLoad('pmax');
+});
+document.getElementById('shopCampaignFilter').addEventListener('change', () => {
+  if (!currentRangeKey) return;
+  runTabLoad('shopping');
+});
+document.getElementById('srchCampaignFilter').addEventListener('change', () => {
+  if (!currentRangeKey) return;
+  runTabLoad('search');
+});
+document.getElementById('dgCampaignFilter').addEventListener('change', () => {
+  if (!currentRangeKey) return;
+  runTabLoad('demandgen');
 });
 document.getElementById('dg-export').addEventListener('click', () => {
   downloadCSV('demand_gen_campaigns.csv',
