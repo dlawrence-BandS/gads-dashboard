@@ -56,6 +56,26 @@
   .two-col{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;}
   @media (max-width:900px){.two-col{grid-template-columns:1fr;}}
   .note{background:var(--teal-light);border:1px solid #bfe3e0;color:#0c4a4a;font-size:12px;padding:10px 14px;border-radius:8px;margin-bottom:16px;}
+  .hero-section{background:linear-gradient(135deg,#fdf1f4 0%,#ffffff 65%);border:1px solid #f2d3dc;}
+  .hero-section h2{font-size:17px;}
+  .hero-stat-row{display:flex;align-items:baseline;gap:28px;flex-wrap:wrap;margin:4px 0 16px;}
+  .hero-stat{display:flex;flex-direction:column;}
+  .hero-stat .num{font-size:34px;font-weight:800;line-height:1;color:#7a1a3a;}
+  .hero-stat .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-top:4px;}
+  .verdict-card{border-radius:10px;padding:16px 18px;border:1px solid var(--border);background:#fff;}
+  .verdict-card.win{border-left:4px solid var(--green);}
+  .verdict-card.lose{border-left:4px solid var(--red);}
+  .verdict-card .verdict-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:10px;}
+  .verdict-card.win .verdict-label{color:var(--green);}
+  .verdict-card.lose .verdict-label{color:var(--red);}
+  .verdict-card .verdict-title{font-size:15px;font-weight:600;margin-bottom:3px;}
+  .verdict-card .verdict-sub{font-size:12px;color:var(--muted);margin-bottom:14px;}
+  .verdict-hero-stat{font-size:30px;font-weight:800;line-height:1;margin-bottom:2px;}
+  .verdict-card.win .verdict-hero-stat{color:var(--green);}
+  .verdict-card.lose .verdict-hero-stat{color:var(--red);}
+  .verdict-sub-stats{display:flex;gap:20px;margin-top:10px;}
+  .verdict-sub-stats div{font-size:12px;color:var(--muted);}
+  .verdict-sub-stats strong{display:block;font-size:14px;color:var(--ink);font-weight:700;}
   .loading{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;padding:30px;justify-content:center;}
   .spinner{width:16px;height:16px;border:2px solid #d5dae1;border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
@@ -70,10 +90,16 @@
   </div>
   <div class="controls">
     <select id="datePreset">
-      <option value="7">Last 7 days</option>
-      <option value="30">Last 30 days</option>
-      <option value="90" selected>Last 90 days</option>
-      <option value="180">Last 180 days</option>
+      <option value="today">Today</option>
+      <option value="yesterday">Yesterday</option>
+      <option value="this_week">This week (Mon – Today)</option>
+      <option value="last_7">Last 7 days</option>
+      <option value="last_week">Last week (Mon – Sun)</option>
+      <option value="last_14">Last 14 days</option>
+      <option value="this_month">This month</option>
+      <option value="last_30" selected>Last 30 days</option>
+      <option value="last_month">Last month</option>
+      <option value="all_time">All time</option>
       <option value="custom">Custom range</option>
     </select>
     <input type="date" id="startDate" style="display:none">
@@ -272,10 +298,11 @@
       <div class="chart-wrap"><canvas id="vid-trend-chart"></canvas></div>
     </div>
 
-    <div class="section">
+    <div class="section hero-section">
       <h2>Completion funnel</h2>
       <div class="desc">Average % of viewers still watching at each quartile of the video.</div>
-      <div class="chart-wrap" style="height:220px;"><canvas id="vid-funnel-chart"></canvas></div>
+      <div class="hero-stat-row" id="vid-funnel-stats"></div>
+      <div class="chart-wrap" style="height:260px;"><canvas id="vid-funnel-chart"></canvas></div>
     </div>
 
     <div class="two-col">
@@ -503,17 +530,65 @@ function downloadCSV(filename, headers, rows){
    ============================================================ */
 function getDateRange(){
   const preset = document.getElementById('datePreset').value;
-  const end = new Date();
-  let start = new Date();
+  const iso = (d) => d.toISOString().slice(0,10);
+  const today = new Date();
+  const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+
   if (preset === 'custom') {
     return {
       start: document.getElementById('startDate').value,
       end: document.getElementById('endDate').value
     };
   }
-  start.setDate(end.getDate() - parseInt(preset, 10));
-  const iso = (d) => d.toISOString().slice(0,10);
-  return { start: iso(start), end: iso(end) };
+  if (preset === 'today') {
+    return { start: iso(today), end: iso(today) };
+  }
+  if (preset === 'yesterday') {
+    const y = addDays(today, -1);
+    return { start: iso(y), end: iso(y) };
+  }
+  if (preset === 'this_week') {
+    // Monday-start week, up to and including today
+    const dow = today.getDay(); // 0=Sun..6=Sat
+    const daysSinceMonday = (dow + 6) % 7;
+    const monday = addDays(today, -daysSinceMonday);
+    return { start: iso(monday), end: iso(today) };
+  }
+  if (preset === 'last_7') {
+    return { start: iso(addDays(today, -6)), end: iso(today) };
+  }
+  if (preset === 'last_week') {
+    // The full Monday–Sunday week before this one
+    const dow = today.getDay();
+    const daysSinceMonday = (dow + 6) % 7;
+    const thisMonday = addDays(today, -daysSinceMonday);
+    const lastMonday = addDays(thisMonday, -7);
+    const lastSunday = addDays(thisMonday, -1);
+    return { start: iso(lastMonday), end: iso(lastSunday) };
+  }
+  if (preset === 'last_14') {
+    return { start: iso(addDays(today, -13)), end: iso(today) };
+  }
+  if (preset === 'this_month') {
+    const first = new Date(today.getFullYear(), today.getMonth(), 1);
+    return { start: iso(first), end: iso(today) };
+  }
+  if (preset === 'last_30') {
+    return { start: iso(addDays(today, -29)), end: iso(today) };
+  }
+  if (preset === 'last_month') {
+    const firstOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastOfPrevMonth = addDays(firstOfThisMonth, -1);
+    const firstOfPrevMonth = new Date(lastOfPrevMonth.getFullYear(), lastOfPrevMonth.getMonth(), 1);
+    return { start: iso(firstOfPrevMonth), end: iso(lastOfPrevMonth) };
+  }
+  if (preset === 'all_time') {
+    // No reliable "earliest data" date known client-side — 2020-01-01 comfortably
+    // predates any backfill, so this just becomes "everything that exists".
+    return { start: '2020-01-01', end: iso(today) };
+  }
+  // Fallback — shouldn't be reached given the option list above
+  return { start: iso(addDays(today, -29)), end: iso(today) };
 }
 document.getElementById('datePreset').addEventListener('change', (e) => {
   const custom = e.target.value === 'custom';
@@ -659,13 +734,19 @@ function campFilterClause(selectId, alias){
 /* ---------- shared: top/bottom performer call-out cards ---------- */
 function renderPerformerCard(containerId, label, item, color, titleText, subtitleText, fields){
   const el = document.getElementById(containerId);
-  if (!item) { el.innerHTML = `<h2 style="color:${color};">${label}</h2><div class="empty">Not enough data for this range.</div>`; return; }
+  const isWin = color === 'var(--green)';
+  if (!item) {
+    el.innerHTML = `<div class="verdict-card ${isWin ? 'win' : 'lose'}"><div class="verdict-label">${label}</div><div class="empty" style="padding:10px 0;">Not enough data for this range.</div></div>`;
+    return;
+  }
+  const [hero, ...rest] = fields;
   el.innerHTML = `
-    <h2 style="color:${color};">${label}</h2>
-    <div style="font-weight:600;font-size:14px;margin-bottom:6px;">${titleText}</div>
-    ${subtitleText ? `<div class="desc" style="margin-bottom:10px;">${subtitleText}</div>` : ''}
-    <div class="cards" style="grid-template-columns:repeat(${fields.length},1fr);">
-      ${fields.map(([l,v]) => `<div class="card"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('')}
+    <div class="verdict-card ${isWin ? 'win' : 'lose'}">
+      <div class="verdict-label">${label}</div>
+      <div class="verdict-title">${titleText}</div>
+      ${subtitleText ? `<div class="verdict-sub">${subtitleText}</div>` : ''}
+      ${hero ? `<div class="verdict-hero-stat">${hero[1]}</div><div style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);">${hero[0]}</div>` : ''}
+      ${rest.length ? `<div class="verdict-sub-stats">${rest.map(([l,v]) => `<div><strong>${v}</strong>${l}</div>`).join('')}</div>` : ''}
     </div>`;
 }
 function toggleTopBottom(wrapId, show){
@@ -1328,15 +1409,21 @@ async function loadVideo(start, end){
     `;
     const fr = await runQuery(funnelSql);
     const funnel = fr.length ? fr[0] : {};
+
+    document.getElementById('vid-funnel-stats').innerHTML = [
+      ['25%', funnel.q25], ['50%', funnel.q50], ['75%', funnel.q75], ['100%', funnel.q100]
+    ].map(([lbl, v]) => `<div class="hero-stat"><div class="num">${v ? fmtPct(v) : '—'}</div><div class="lbl">watched to ${lbl}</div></div>`).join('');
+
     if (window.chartInstances['vid-funnel-chart']) window.chartInstances['vid-funnel-chart'].destroy();
     window.chartInstances['vid-funnel-chart'] = new Chart(document.getElementById('vid-funnel-chart'), {
       type: 'bar',
       data: {
         labels: ['25% watched', '50% watched', '75% watched', '100% watched'],
-        datasets: [{ label: '% of viewers', data: [funnel.q25, funnel.q50, funnel.q75, funnel.q100].map(v => num(v) * 100), backgroundColor: '#9d174d' }]
+        datasets: [{ label: '% of viewers', data: [funnel.q25, funnel.q50, funnel.q75, funnel.q100].map(v => num(v) * 100),
+          backgroundColor: ['#f9c6d3', '#ee9fb5', '#c65a80', '#7a1a3a'], borderRadius: 6, maxBarThickness: 90 }]
       },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-        scales: { y: { max: 100, title: { display: true, text: '% of viewers' } } } }
+        scales: { y: { max: 100, title: { display: true, text: '% of viewers' }, grid: { color: '#f2d3dc' } }, x: { grid: { display: false } } } }
     });
   } catch(e) { console.warn('Video completion funnel failed:', e.message); }
 
@@ -1637,7 +1724,7 @@ async function loadVideo(start, end){
     document.getElementById('vid-videos').innerHTML = vTop.length ? `<table>
       <tr><th>Video</th><th>Campaign</th><th>Ad group</th><th>Duration</th><th>Impressions</th><th>Views</th><th>View rate</th><th>CPV</th><th>Completion</th><th>Spend</th></tr>
       ${vTop.map(r=>{
-        const thumb = r.video_id ? `<img src="https://img.youtube.com/vi/${r.video_id}/default.jpg" style="width:64px;height:36px;object-fit:cover;border-radius:4px;vertical-align:middle;margin-right:8px;">` : '';
+        const thumb = r.video_id ? `<img src="https://img.youtube.com/vi/${r.video_id}/mqdefault.jpg" style="width:88px;height:50px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:10px;box-shadow:0 1px 3px rgba(0,0,0,.15);">` : '';
         return `<tr><td>${thumb}${r.title||r.video_id||'—'}</td><td>${r.campaign_name||'—'}</td><td>${r.ad_group_name||'—'}</td><td>${fmtDuration(r.duration_ms)}</td>
         <td>${fmtInt(r.impressions)}</td><td>${r.views ? fmtInt(r.views) : '—'}</td><td>${r.view_rate ? fmtPct(r.view_rate) : '—'}</td>
         <td>${r.avg_cpv ? '£'+num(r.avg_cpv).toFixed(3) : '—'}</td><td>${r.q100 ? fmtPct(r.q100) : '—'}</td><td>${fmtGBP(r.spend)}</td></tr>`;
@@ -1649,25 +1736,28 @@ async function loadVideo(start, end){
 
   /* ---- Top / bottom performing ad, by CPV, among videos with meaningful spend ---- */
   const eligible = vTop.filter(r => num(r.avg_cpv) > 0 && num(r.spend) >= 50);
-  const renderAdCard = (containerId, label, r, badgeColor) => {
+  const renderAdCard = (containerId, label, r, isWin) => {
     const el = document.getElementById(containerId);
-    if (!r) { el.innerHTML = `<h2>${label}</h2><div class="empty">Not enough data (needs videos with £50+ spend and view data).</div>`; return; }
-    const thumb = r.video_id ? `<img src="https://img.youtube.com/vi/${r.video_id}/mqdefault.jpg" style="width:100%;border-radius:8px;margin-bottom:10px;">` : '';
+    if (!r) { el.innerHTML = `<div class="verdict-card ${isWin?'win':'lose'}"><div class="verdict-label">${label}</div><div class="empty" style="padding:10px 0;">Not enough data (needs videos with £50+ spend and view data).</div></div>`; return; }
+    const thumb = r.video_id ? `<img src="https://img.youtube.com/vi/${r.video_id}/mqdefault.jpg" style="width:100%;border-radius:8px;margin-bottom:12px;display:block;">` : '';
     el.innerHTML = `
-      <h2 style="color:${badgeColor};">${label}</h2>
-      ${thumb}
-      <div style="font-weight:600;font-size:14px;margin-bottom:6px;">${r.title || r.video_id}</div>
-      <div class="desc" style="margin-bottom:10px;">${r.campaign_name || ''}${r.ad_group_name ? ' · ' + r.ad_group_name : ''}</div>
-      <div class="cards" style="grid-template-columns:repeat(3,1fr);">
-        <div class="card"><div class="label">CPV</div><div class="value">£${num(r.avg_cpv).toFixed(3)}</div></div>
-        <div class="card"><div class="label">Views</div><div class="value">${fmtInt(r.views)}</div></div>
-        <div class="card"><div class="label">Completion</div><div class="value">${r.q100 ? fmtPct(r.q100) : '—'}</div></div>
+      <div class="verdict-card ${isWin?'win':'lose'}">
+        <div class="verdict-label">${label}</div>
+        ${thumb}
+        <div class="verdict-title">${r.title || r.video_id}</div>
+        <div class="verdict-sub">${r.campaign_name || ''}${r.ad_group_name ? ' · ' + r.ad_group_name : ''}</div>
+        <div class="verdict-hero-stat">£${num(r.avg_cpv).toFixed(3)}</div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);">CPV</div>
+        <div class="verdict-sub-stats">
+          <div><strong>${fmtInt(r.views)}</strong>Views</div>
+          <div><strong>${r.q100 ? fmtPct(r.q100) : '—'}</strong>Completion</div>
+        </div>
       </div>`;
   };
   if (eligible.length >= 2) {
     const sorted = [...eligible].sort((a,b) => num(a.avg_cpv) - num(b.avg_cpv));
-    renderAdCard('vid-top-ad-card', '🏆 Best CPV', sorted[0], 'var(--green)');
-    renderAdCard('vid-bottom-ad-card', '⚠️ Worst CPV', sorted[sorted.length-1], 'var(--red)');
+    renderAdCard('vid-top-ad-card', '🏆 Best CPV', sorted[0], true);
+    renderAdCard('vid-bottom-ad-card', '⚠️ Worst CPV', sorted[sorted.length-1], false);
     document.getElementById('vid-top-bottom-wrap').style.display = '';
   } else {
     document.getElementById('vid-top-bottom-wrap').style.display = 'none';
