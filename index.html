@@ -1270,10 +1270,12 @@ async function loadSearch(start, end){
    SEARCH TERMS
    ============================================================ */
 let searchTermsCache = [];
-const BRAND_TERMS = ['barker', 'stonehouse', 'b&s', 'bands'];
 function isBrandTerm(term){
   const t = (term||'').toLowerCase();
-  return BRAND_TERMS.some(b => t.includes(b));
+  // "barker" alone is a reliable brand signal — no unrelated furniture search
+  // would contain it. "stonehouse"/"stone house" needs both parts present so
+  // it doesn't catch unrelated searches that just happen to mention "stone".
+  return t.includes('barker') || (t.includes('stone') && t.includes('hous'));
 }
 async function loadSearchTerms(start, end){
   spin(['st-table']);
